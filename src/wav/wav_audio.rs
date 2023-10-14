@@ -1,13 +1,19 @@
 use std::io::{BufReader, Read, self};
 use std::fs::File;
 
+use cpal::Sample;
+
 use crate::audio_codec::Audio;
+use crate::SampleMetadata;
+use crate::cpal_abstraction::{Samples, GetSamples};
 use crate::wav::utils;
 use crate::wav::AudioFormat;
 
+const HEADER_SIZE: usize = 44;
+
 #[derive(Debug, Clone)]
 /// Info contained in the WAVE file header
-struct WavAudioMetadata {
+pub struct WavAudioMetadata {
     /// The way the data is read
     pub audio_format: AudioFormat,
     /// Numbers of channels: mono = 1, Stereo = 2, etc...
@@ -26,12 +32,12 @@ impl WavAudioMetadata {
     pub fn new(path: &str) -> Result<WavAudioMetadata, io::Error> {
         let f = File::open(path)?;
         let mut reader = BufReader::new(f);
-        let mut header = [0u8; 44];
+        let mut header = [0u8; HEADER_SIZE];
         reader.read_exact(&mut header)?;
 
         let audio_format_value = u16::from_le_bytes(header[20..22].try_into().unwrap());
         let audio_format = match audio_format_value {
-            1 => AudioFormat::Pcm,
+            1 => AudioFormat::LPcm,
             _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "Unsupported or invalid WAVE audio format")),
         };
 
@@ -89,6 +95,40 @@ impl WavAudio {
     }
 }
 
+impl<T: cpal::Sample> GetSamples<T> for WavAudio {
+    type SampleType = T;
+
+    // TODO: This
+    fn get_samples(&self) -> Result<Samples<Self::SampleType>, io::Error> {
+        let metadata = self.metadata.into();
+
+        let f = File::open(self.file_path)?;
+        let mut reader = BufReader::new(f);
+
+        // Removes the header
+        let mut header = [0u8; HEADER_SIZE];
+        reader.read_exact(&mut header)?;
+
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes)?;
+
+        let samples: Samples<T> = match self.metadata.bits_per_sample {
+            8 => Samples::new(bytes, metadata),
+            16 => {
+                let samples_array = Vec::new();
+                for i in 0..(bytes.len() / 2) {
+                    let sample = i16::from_le_bytes([bytes[i*2], bytes[(i*2)+2]]);
+                    samples_array.push(sample);
+                }
+
+                Samples::new(samples_array, metadata)
+            }
+        };
+
+        return Ok(samples)
+    }
+}
+
 // TODO:
 //impl AudioCodec for WavAudio {
 //    fn play_from(&self, duration: std::time::Duration) -> Result<(), crate::errors::PlayError> {
@@ -98,6 +138,12 @@ impl WavAudio {
 //    }
 //}
 
+impl From<WavAudioMetadata> for SampleMetadata {
+    fn from(value: WavAudioMetadata) -> Self {
+        SampleMetadata::new(value.channels, value.sample_rate)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -106,7 +152,7 @@ mod tests {
     fn metadata_is_valid() {
         let meta = WavAudioMetadata::new("test_assets/9000.wav").unwrap();
 
-        assert_eq!(meta.audio_format, AudioFormat::Pcm);
+        assert_eq!(meta.audio_format, AudioFormat::LPcm);
 
         assert_eq!(meta.channels, 1);
 
