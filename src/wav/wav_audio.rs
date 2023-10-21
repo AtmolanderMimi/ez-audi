@@ -5,7 +5,7 @@ use cpal::Sample;
 
 use crate::audio_codec::Audio;
 use crate::SampleMetadata;
-use crate::cpal_abstraction::{Samples, GetSamples};
+use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait};
 use crate::wav::utils;
 use crate::wav::AudioFormat;
 
@@ -77,9 +77,10 @@ pub struct WavAudio {
     metadata: WavAudioMetadata,
 }
 
+type Error<T> = Result<T, io::Error>;
 
 impl WavAudio {
-    pub fn new(path: &str) -> Result<WavAudio, io::Error> {
+    pub fn new(path: &str) -> Error<WavAudio> {
         if !utils::file_is_wav(path)? {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Expected a WAVE file"));
         }
@@ -93,16 +94,9 @@ impl WavAudio {
 
         Ok(audio)
     }
-}
 
-impl<T: cpal::Sample> GetSamples<T> for WavAudio {
-    type SampleType = T;
-
-    // TODO: This
-    fn get_samples(&self) -> Result<Samples<Self::SampleType>, io::Error> {
-        let metadata = self.metadata.into();
-
-        let f = File::open(self.file_path)?;
+    fn get_samples_bytes(&self) -> Error<Vec<u8>> {
+        let f = File::open(&self.file_path)?;
         let mut reader = BufReader::new(f);
 
         // Removes the header
@@ -112,20 +106,31 @@ impl<T: cpal::Sample> GetSamples<T> for WavAudio {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes)?;
 
-        let samples: Samples<T> = match self.metadata.bits_per_sample {
-            8 => Samples::new(bytes, metadata),
-            16 => {
-                let samples_array = Vec::new();
-                for i in 0..(bytes.len() / 2) {
-                    let sample = i16::from_le_bytes([bytes[i*2], bytes[(i*2)+2]]);
-                    samples_array.push(sample);
-                }
+        return Ok(bytes)
+    }
 
-                Samples::new(samples_array, metadata)
-            }
-        };
+    fn get_samples_u8(&self) -> Error<Samples<u8>> {
+        let samples_bytes = self.get_samples_bytes()?;
+        let metadata = self.metadata.clone().into();
 
-        return Ok(samples)
+        let sample_containter = Samples::new(samples_bytes, metadata);
+
+        Ok(sample_containter)
+    }
+
+    fn get_samples_i16(&self) -> Error<Samples<i16>> {
+        let bytes = self.get_samples_bytes()?;
+        let metadata = self.metadata.clone().into();
+
+        let mut samples_array = Vec::new();
+        for i in 0..(bytes.len() / 2) {
+            let sample = i16::from_le_bytes([bytes[i*2], bytes[(i*2)+2]]);
+            samples_array.push(sample);
+        }
+
+        let sample_containter = Samples::new(samples_array, metadata);
+
+        Ok(sample_containter)
     }
 }
 
@@ -140,7 +145,13 @@ impl<T: cpal::Sample> GetSamples<T> for WavAudio {
 
 impl From<WavAudioMetadata> for SampleMetadata {
     fn from(value: WavAudioMetadata) -> Self {
-        SampleMetadata::new(value.channels, value.sample_rate)
+        let sample_type = match value.bits_per_sample {
+            8 => SampleType::U8,
+            16 => SampleType::I16,
+            _ => todo!("unsupported")
+        };
+
+        SampleMetadata::new(value.channels, value.sample_rate, sample_type)
     }
 }
 
