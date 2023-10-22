@@ -1,14 +1,18 @@
-use std::{mem, io};
+use cpal;
 
-use cpal::{Sample, FromSample};
+use super::Device;
 
+pub trait Sample: cpal::SizedSample + std::marker::Send + 'static {}
+
+impl<T: cpal::SizedSample + std::marker::Send + 'static> Sample for T {}
+
+#[derive(Debug, Clone)]
 pub struct Samples<T: Sample> {
     samples: Vec<T>,
     metadata: SampleMetadata,
 }
 
-impl<T: Sample> Samples<T>
-where i16: FromSample<T> {
+impl<T: Sample> Samples<T> {
     pub fn new(samples: Vec<T>, metadata: SampleMetadata) -> Samples<T> {
         Samples {
             samples,
@@ -16,14 +20,10 @@ where i16: FromSample<T> {
         }
     }
 
-    /// A destrutive way to take samples, can only be used once then only returns None
-    pub fn samples(&mut self) -> Option<Vec<T>> {
-        let array = mem::take(&mut self.samples);
-        if array.len() == 0 {
-            None
-        } else {
-            Some(array)
-        }
+    /// Gets the samples, but then destroys the struct
+    #[doc(hidden)]
+    pub fn samples(self) -> Vec<T> {
+        self.samples
     }
 
     pub fn metadata(&self) -> &SampleMetadata {
@@ -31,24 +31,24 @@ where i16: FromSample<T> {
     }
 }
 pub trait SamplesTrait {
-    // Transforms the samples into i16 samples
-    fn get_samples(&mut self) -> Option<Vec<i16>>;
+    /// Consumes the samples and plays on the specified device
+    fn play_on_device(self, device: Device);
+
+    fn metadata(&self) -> SampleMetadata;
 }
 
-impl<T: Sample> SamplesTrait for Samples<T>
-where i16: FromSample<T> {
-    fn get_samples(&mut self) -> Option<Vec<i16>> {
-        let samples = self.samples()?;
+impl<T: Sample> SamplesTrait for Samples<T> {
+    fn play_on_device(self, device: Device) {
+        device.play(self)
+    }
 
-        let samples = samples.into_iter()
-            .map(|s| s.to_sample())
-            .collect::<Vec<_>>();
-
-        Some(samples)
+    fn metadata(&self) -> SampleMetadata {
+        self.metadata.clone()
     }
 }
 
 /// Metadata about audio samples
+#[derive(Debug, Clone)]
 pub struct SampleMetadata {
     /// Numbers of channels: mono = 1, Stereo = 2, etc...
     pub channels: u16,
@@ -67,13 +67,45 @@ impl SampleMetadata {
     }
 }
 
+impl From<&SampleMetadata> for cpal::SupportedStreamConfig {
+    fn from(value: &SampleMetadata) -> Self {
+        let channels = value.channels;
+        let sample_rate = cpal::SampleRate(value.sample_rate);
+        let sample_type = value.sample_type.clone().into();
+
+        cpal::SupportedStreamConfig::new(channels, sample_rate, cpal::SupportedBufferSize::Unknown, sample_type)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum SampleType {
     U8,
     U16,
     U32,
+    U64,
     I8,
     I16,
     I32,
-    F16,
+    I64,
     F32,
+    F64,
+}
+
+impl From<SampleType> for cpal::SampleFormat {
+    fn from(value: SampleType) -> Self {
+        match value {
+            SampleType::U8 => cpal::SampleFormat::U8,
+            SampleType::U16 => cpal::SampleFormat::U16,
+            SampleType::U32 => cpal::SampleFormat::U32,
+            SampleType::U64 => cpal::SampleFormat::U64,
+
+            SampleType::I8 => cpal::SampleFormat::I8,
+            SampleType::I16 => cpal::SampleFormat::I16,
+            SampleType::I32 => cpal::SampleFormat::I32,
+            SampleType::I64 => cpal::SampleFormat::I64,
+
+            SampleType::F32 => cpal::SampleFormat::F32,
+            SampleType::F64 => cpal::SampleFormat::F64,
+        }
+    }
 }

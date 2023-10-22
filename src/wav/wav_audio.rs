@@ -1,11 +1,9 @@
 use std::io::{BufReader, Read, self};
 use std::fs::File;
 
-use cpal::Sample;
-
 use crate::audio_codec::Audio;
 use crate::SampleMetadata;
-use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait};
+use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait, Sample};
 use crate::wav::utils;
 use crate::wav::AudioFormat;
 
@@ -66,6 +64,15 @@ impl WavAudioMetadata {
     pub fn block_align(&self) -> u16 {
         (self.channels * self.bits_per_sample) / 8
     }
+
+    /// Returns the sample format based on the bits per sample
+    pub fn sample_type(&self) -> SampleType {
+        match self.bits_per_sample {
+            8 => SampleType::U8,
+            16 => SampleType::I16,
+            _ => todo!("Unsupported")
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -93,6 +100,14 @@ impl WavAudio {
         };
 
         Ok(audio)
+    }
+
+    pub fn get_samples(&self) -> Error<Box<dyn SamplesTrait>> {
+        match self.metadata.sample_type() {
+            SampleType::U8 => return Ok(Box::new(self.get_samples_u8()?)),
+            SampleType::I16 => return Ok(Box::new(self.get_samples_i16()?)),
+            _ => todo!("unsupported")
+        }
     }
 
     fn get_samples_bytes(&self) -> Error<Vec<u8>> {
@@ -145,11 +160,7 @@ impl WavAudio {
 
 impl From<WavAudioMetadata> for SampleMetadata {
     fn from(value: WavAudioMetadata) -> Self {
-        let sample_type = match value.bits_per_sample {
-            8 => SampleType::U8,
-            16 => SampleType::I16,
-            _ => todo!("unsupported")
-        };
+        let sample_type = value.sample_type();
 
         SampleMetadata::new(value.channels, value.sample_rate, sample_type)
     }

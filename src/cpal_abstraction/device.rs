@@ -2,6 +2,8 @@ use std::fmt::Debug;
 
 use cpal::{self, traits::HostTrait, traits::DeviceTrait, Host};
 
+use super::{SamplesTrait, config, Samples, Sample};
+
 pub struct Device {
     device: cpal::Device,
 }
@@ -11,6 +13,41 @@ impl Device {
         Device {
             device
         }
+    }
+
+    pub fn play_default_output<T: Sample>(samples: Samples<T>) {
+        let device = Device::default_output()
+            .expect("no default output device on the default host");
+    
+        device.play(samples)
+    }
+
+    pub fn play<T: Sample>(&self, samples: Samples<T>) {
+        let config_range = self.inner_device().supported_output_configs()
+            .expect("default output device of default host has no output configs");
+
+        let metadata = samples.metadata().into();
+        let config = config::best_fitting_stream_config(&metadata, config_range)
+            .expect("default output device of default host has no matching output configs");
+
+        let sample_rate = cpal::SampleRate(samples.metadata().sample_rate);
+        let config = config.with_sample_rate(sample_rate);
+
+        let mut samples_iter = samples.samples().into_iter();
+        let data_callback = move |samples_out: &mut [T], info: &_| {
+            for sample in samples_out {
+                *sample = match samples_iter.next() {
+                    Some(s) => s,
+                    None => T::EQUILIBRIUM,
+                }
+            }
+        };
+
+        let error_callback = |err| {
+            panic!("{:?}", err);
+        };
+        
+        self.inner_device().build_output_stream(&config.config(), data_callback, error_callback, None);
     }
 
     /// Returns all devices from all hosts
