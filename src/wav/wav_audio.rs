@@ -3,7 +3,7 @@ use std::fs::File;
 
 use crate::audio_codec::PlayableTrait;
 use crate::SampleMetadata;
-use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait, Sample};
+use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait};
 use crate::wav::utils;
 use crate::wav::AudioFormat;
 
@@ -16,7 +16,7 @@ pub struct WavAudioMetadata {
     pub audio_format: AudioFormat,
     /// Numbers of channels: mono = 1, Stereo = 2, etc...
     pub channels: u16,
-    /// The number of samples per a mount of time TODO: what amount of time?
+    /// The number of samples per second (most likely)
     pub sample_rate: u32,
     // Byte rate = sample_rate * channels * bits_per_sample/8
     // Block align = channels * bits_per_sample/8
@@ -91,9 +91,9 @@ impl WavAudio {
         if !utils::file_is_wav(path)? {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Expected a WAVE file"));
         }
-
+        
         let metadata = WavAudioMetadata::new(&path)?;
-
+        
         let audio = WavAudio {
             file_path: path.to_string(),
             metadata,
@@ -151,7 +151,9 @@ impl WavAudio {
 
 impl PlayableTrait for WavAudio {
     fn play(&self, device: crate::cpal_abstraction::Device) -> Result<crate::cpal_abstraction::Stream, io::Error> {
-        self.play(device)
+        let stream = self.get_samples()?.play_on_device(device);
+
+        Ok(stream)
     }
 }
 
