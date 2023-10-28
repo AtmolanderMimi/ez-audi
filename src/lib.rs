@@ -1,7 +1,6 @@
-mod audio_codec;
 pub mod wav;
 pub mod errors;
-pub use crate::audio_codec::PlayableTrait;
+pub mod traits;
 // TODO: Rethink Interface design
 pub mod cpal_abstraction;
 use cpal_abstraction::SampleMetadata;

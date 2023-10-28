@@ -1,11 +1,9 @@
-use ez_audi::{self, cpal_abstraction::Device, wav::WavAudio, PlayableTrait};
+use ez_audi::{wav::WavAudio, traits::AudioFileTrait};
 
 fn main() {
-    let device = Device::default_output().unwrap();
-
     let wav_audio = WavAudio::new("test_assets/9000.wav").unwrap();
 
-    let stream = wav_audio.play(device).unwrap();
+    let stream = wav_audio.play_on_default_output().unwrap();
 
     std::thread::sleep(std::time::Duration::from_secs(1));
 

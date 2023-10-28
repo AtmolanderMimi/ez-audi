@@ -1,7 +1,7 @@
 use std::io::{BufReader, Read, self};
 use std::fs::File;
 
-use crate::audio_codec::PlayableTrait;
+use crate::traits::AudioFileTrait;
 use crate::SampleMetadata;
 use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait};
 use crate::wav::utils;
@@ -149,7 +149,7 @@ impl WavAudio {
     }
 }
 
-impl PlayableTrait for WavAudio {
+impl AudioFileTrait for WavAudio {
     fn play(&self, device: crate::cpal_abstraction::Device) -> Result<crate::cpal_abstraction::Stream, io::Error> {
         let stream = self.get_samples()?.play_on_device(device);
 
