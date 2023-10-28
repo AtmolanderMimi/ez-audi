@@ -1,7 +1,7 @@
 use std::io::{BufReader, Read, self};
 use std::fs::File;
 
-use crate::audio_codec::Audio;
+use crate::audio_codec::PlayableTrait;
 use crate::SampleMetadata;
 use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait, Sample};
 use crate::wav::utils;
@@ -138,8 +138,8 @@ impl WavAudio {
         let metadata = self.metadata.clone().into();
 
         let mut samples_array = Vec::new();
-        for i in 0..(bytes.len() / 2) {
-            let sample = i16::from_le_bytes([bytes[i*2], bytes[(i*2)+2]]);
+        for i in 0..((bytes.len() / 2)) {
+            let sample = i16::from_le_bytes([bytes[i*2], bytes[(i*2)+1]]);
             samples_array.push(sample);
         }
 
@@ -149,14 +149,11 @@ impl WavAudio {
     }
 }
 
-// TODO:
-//impl AudioCodec for WavAudio {
-//    fn play_from(&self, duration: std::time::Duration) -> Result<(), crate::errors::PlayError> {
-//        let f = File::open(self.file_path)
-//            .expect("File path should be valid since it was verified in the build process");
-//        let reader = BufReader::new(f);
-//    }
-//}
+impl PlayableTrait for WavAudio {
+    fn play(&self, device: crate::cpal_abstraction::Device) -> Result<crate::cpal_abstraction::Stream, io::Error> {
+        self.play(device)
+    }
+}
 
 impl From<WavAudioMetadata> for SampleMetadata {
     fn from(value: WavAudioMetadata) -> Self {

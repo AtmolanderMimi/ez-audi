@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
-use cpal::{self, traits::HostTrait, traits::DeviceTrait, Host};
+use cpal::{self, traits::HostTrait, traits::{DeviceTrait, StreamTrait}, Host};
 
-use super::{SamplesTrait, config, Samples, Sample};
+use super::{SamplesTrait, config, Samples, Sample, Stream};
 
 pub struct Device {
     device: cpal::Device,
@@ -15,14 +15,14 @@ impl Device {
         }
     }
 
-    pub fn play_default_output<T: Sample>(samples: Samples<T>) {
+    pub fn play_default_output<T: Sample>(samples: Samples<T>) -> Stream {
         let device = Device::default_output()
             .expect("no default output device on the default host");
     
         device.play(samples)
     }
 
-    pub fn play<T: Sample>(&self, samples: Samples<T>) {
+    pub fn play<T: Sample>(&self, samples: Samples<T>) -> Stream {
         let config_range = self.inner_device().supported_output_configs()
             .expect("default output device of default host has no output configs");
 
@@ -47,7 +47,16 @@ impl Device {
             panic!("{:?}", err);
         };
         
-        self.inner_device().build_output_stream(&config.config(), data_callback, error_callback, None);
+        let stream = self
+            .inner_device()
+            .build_output_stream(&config.config(), data_callback, error_callback, None)
+            // FIXME: I will puke uncontrolably if this is not removed within a reasonable amount of time :)
+            .unwrap();
+
+        // FIXME: Here too
+        stream.play().unwrap();
+
+        stream.into()
     }
 
     /// Returns all devices from all hosts

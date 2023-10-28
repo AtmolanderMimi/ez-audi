@@ -1,15 +1,15 @@
+use crate::cpal_abstraction::{Device, Stream};
 use crate::errors::PlayError;
 
 use std::time::Duration;
+use std::io;
 
-pub trait Audio {
+pub trait PlayableTrait {
     // Starts playing the audio from a certain duration
-    fn play_from(&self, duration: Duration) -> Result<(), PlayError>;
+    fn play(&self, device: Device) -> Result<Stream, io::Error>;
 
-    // Gives the duration of the audio source
-    fn duration(&self) -> Duration;
-    // Gives the at how many hertz is the audio source
-    fn hertz(&self) -> u32;
-    // Gives what is the hertz rate of the audio source
-    fn bitrate(&self) -> u32;
+    fn play_on_default_output(&self) -> Result<Stream, io::Error> {
+        let device = Device::default_output().unwrap_or(todo!("Better error"));
+        self.play(device)
+    }
 }
