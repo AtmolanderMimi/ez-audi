@@ -13,11 +13,12 @@ impl Stream {
         }
     }
 
-    /// Continues the audio from where it ended
+    /// Continues/Starts the audio from where it ended
     pub fn start(&self) {
         self.stream.play();
     }
 
+    /// Stops the audio until it is explicitly continued
     pub fn stop(&self) {
         self.stream.pause();
     }

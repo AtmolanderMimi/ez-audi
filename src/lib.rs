@@ -1,5 +1,6 @@
 pub mod wav;
-pub mod errors;
+mod errors;
+pub use errors::PlayError;
 pub mod traits;
 // TODO: Rethink Interface design
 pub mod cpal_abstraction;

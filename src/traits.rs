@@ -1,15 +1,16 @@
 use crate::cpal_abstraction::{Device, Stream};
 use crate::errors::PlayError;
 
-use std::time::Duration;
-use std::io;
-
 pub trait AudioFileTrait {
     // Starts playing the audio from a certain duration
-    fn play(&self, device: Device) -> Result<Stream, io::Error>;
+    fn play(&self, device: Device) -> Result<Stream, PlayError>;
 
-    fn play_on_default_output(&self) -> Result<Stream, io::Error> {
-        let device = Device::default_output().unwrap_or_else(|| todo!("Better error"));
+    fn play_on_default_output(&self) -> Result<Stream, PlayError> {
+        let device = match Device::default_output() {
+            Some(d) => d,
+            None => return Err(PlayError::DeviceDoesNotExist { name: "default".to_string() })
+        };
+
         self.play(device)
     }
 }

@@ -1,11 +1,13 @@
-use std::io::{BufReader, Read, self};
+use std::io::{BufReader, Read};
 use std::fs::File;
 
+use crate::errors::PlayError;
 use crate::traits::AudioFileTrait;
 use crate::SampleMetadata;
 use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait};
 use crate::wav::utils;
 use crate::wav::AudioFormat;
+use crate::errors::Error;
 
 const HEADER_SIZE: usize = 44;
 
@@ -27,7 +29,7 @@ pub struct WavAudioMetadata {
 
 impl WavAudioMetadata {
     /// Gets the metadata from the file's header. Assumes that the file is a WAVE file
-    pub fn new(path: &str) -> Result<WavAudioMetadata, io::Error> {
+    pub fn new(path: &str) -> Result<WavAudioMetadata, PlayError> {
         let f = File::open(path)?;
         let mut reader = BufReader::new(f);
         let mut header = [0u8; HEADER_SIZE];
@@ -36,7 +38,7 @@ impl WavAudioMetadata {
         let audio_format_value = u16::from_le_bytes(header[20..22].try_into().unwrap());
         let audio_format = match audio_format_value {
             1 => AudioFormat::LPcm,
-            _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "Unsupported or invalid WAVE audio format")),
+            _ => return Err(PlayError::Unsuported("audio format other than LPCM".to_string())),
         };
 
         let channels = u16::from_le_bytes(header[22..24].try_into().unwrap());
@@ -84,12 +86,10 @@ pub struct WavAudio {
     metadata: WavAudioMetadata,
 }
 
-type Error<T> = Result<T, io::Error>;
-
 impl WavAudio {
     pub fn new(path: &str) -> Error<WavAudio> {
         if !utils::file_is_wav(path)? {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Expected a WAVE file"));
+            return Err(PlayError::WrongFileType);
         }
         
         let metadata = WavAudioMetadata::new(&path)?;
@@ -150,7 +150,7 @@ impl WavAudio {
 }
 
 impl AudioFileTrait for WavAudio {
-    fn play(&self, device: crate::cpal_abstraction::Device) -> Result<crate::cpal_abstraction::Stream, io::Error> {
+    fn play(&self, device: crate::cpal_abstraction::Device) -> Result<crate::cpal_abstraction::Stream, PlayError> {
         let stream = self.get_samples()?.play_on_device(device);
 
         Ok(stream)

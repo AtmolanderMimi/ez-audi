@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
-use cpal::{self, traits::HostTrait, traits::{DeviceTrait, StreamTrait}, Host};
+use cpal::{self, traits::{HostTrait, DeviceTrait, StreamTrait}, Host};
 
-use super::{SamplesTrait, config, Samples, Sample, Stream};
+use super::{config, Samples, Sample, Stream};
 
 pub struct Device {
     device: cpal::Device,
@@ -44,6 +44,7 @@ impl Device {
         };
 
         let error_callback = |err| {
+            // FIXME: Here too,
             panic!("{:?}", err);
         };
         
@@ -53,8 +54,7 @@ impl Device {
             // FIXME: I will puke uncontrolably if this is not removed within a reasonable amount of time :)
             .unwrap();
 
-        // FIXME: Here too
-        stream.play().unwrap();
+        stream.play();
 
         stream.into()
     }
