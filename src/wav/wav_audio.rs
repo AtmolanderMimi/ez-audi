@@ -1,4 +1,4 @@
-use std::io::{BufReader, Read};
+use std::io::{BufReader, Read, BufRead};
 use std::fs::File;
 use std::ops::Deref;
 
@@ -10,7 +10,16 @@ use crate::wav::utils;
 use crate::wav::AudioFormat;
 use crate::errors::Error;
 
-const HEADER_SIZE: usize = 44;
+const FMT_ID_END_BYTE: u8 = 32;
+/// The block size (without the "fmt " id)
+const FMT_BLOCK_SIZE: usize = 24;
+
+/// Reads until and passes the "fmt " id
+fn read_until_fmt_block_and_pass(reader: &mut BufReader<File>) -> Result<(), PlayError> {
+    reader.read_until(FMT_ID_END_BYTE, &mut Vec::new())?;
+
+    Ok(())
+}
 
 #[derive(Debug, Clone)]
 /// Info contained in the WAVE file header
@@ -33,20 +42,22 @@ impl WavAudioMetadata {
     pub fn new(path: &str) -> Result<WavAudioMetadata, PlayError> {
         let f = File::open(path)?;
         let mut reader = BufReader::new(f);
-        let mut header = [0u8; HEADER_SIZE];
-        reader.read_exact(&mut header)?;
+        read_until_fmt_block_and_pass(&mut reader)?;
 
-        let audio_format_value = u16::from_le_bytes(header[20..22].try_into().unwrap());
+        let mut fmt_block = [0u8; FMT_BLOCK_SIZE];
+        reader.read_exact(&mut fmt_block)?;
+
+        let audio_format_value = u16::from_le_bytes(fmt_block[4..6].try_into().unwrap());
         let audio_format = match audio_format_value {
             1 => AudioFormat::LPcm,
             _ => return Err(PlayError::Unsuported("audio format other than LPCM".to_string())),
         };
 
-        let channels = u16::from_le_bytes(header[22..24].try_into().unwrap());
+        let channels = u16::from_le_bytes(fmt_block[6..8].try_into().unwrap());
 
-        let sample_rate = u32::from_le_bytes(header[24..28].try_into().unwrap());
+        let sample_rate = u32::from_le_bytes(fmt_block[8..12].try_into().unwrap());
 
-        let bits_per_sample = u16::from_le_bytes(header[34..36].try_into().unwrap());
+        let bits_per_sample = u16::from_le_bytes(fmt_block[18..20].try_into().unwrap());
 
         let metadata = WavAudioMetadata {
             audio_format,
@@ -137,7 +148,9 @@ impl WavAudio {
         let mut reader = BufReader::new(f);
 
         // Removes the header
-        let mut header = [0u8; HEADER_SIZE];
+        read_until_fmt_block_and_pass(&mut reader)?;
+
+        let mut header = [0u8; FMT_BLOCK_SIZE];
         reader.read_exact(&mut header)?;
 
         let mut bytes = Vec::new();
