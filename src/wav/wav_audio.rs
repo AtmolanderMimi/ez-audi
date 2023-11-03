@@ -1,5 +1,6 @@
 use std::io::{BufReader, Read};
 use std::fs::File;
+use std::ops::Deref;
 
 use crate::errors::PlayError;
 use crate::traits::AudioFileTrait;
@@ -15,16 +16,16 @@ const HEADER_SIZE: usize = 44;
 /// Info contained in the WAVE file header
 pub struct WavAudioMetadata {
     /// The way the data is read
-    pub audio_format: AudioFormat,
+    audio_format: AudioFormat,
     /// Numbers of channels: mono = 1, Stereo = 2, etc...
-    pub channels: u16,
+    channels: u16,
     /// The number of samples per second (most likely)
-    pub sample_rate: u32,
+    sample_rate: u32,
     // Byte rate = sample_rate * channels * bits_per_sample/8
     // Block align = channels * bits_per_sample/8
     /// The number of bits in a sample. BITS NOT BYTES.
     /// 8-bit sample are usigned values, whereas 16-bit are signed values
-    pub bits_per_sample: u16,
+    bits_per_sample: u16,
 }
 
 impl WavAudioMetadata {
@@ -55,6 +56,27 @@ impl WavAudioMetadata {
         };
 
         Ok(metadata)
+    }
+
+    /// Returns the audio format
+    pub fn audio_format(&self) -> AudioFormat {
+        self.audio_format.clone()
+    }
+
+    /// Returns the number of channels.
+    /// 1 = mono, 2 = stereo, etc...
+    pub fn channels(&self) -> u16 {
+        self.channels.clone()
+    }
+
+    /// Returns the number of samples per second (Hz)
+    pub fn sample_rate(&self) -> u32 {
+        self.sample_rate.clone()
+    }
+
+    /// Returns he number of bits in a sample. BITS NOT BYTES
+    pub fn bits_per_sample(&self) -> u16 {
+        self.bits_per_sample.clone()
     }
 
     /// Calculates the byte rate
@@ -154,6 +176,14 @@ impl AudioFileTrait for WavAudio {
         let stream = self.get_samples()?.play_on_device(device);
 
         Ok(stream)
+    }
+}
+
+impl Deref for WavAudio {
+    type Target = WavAudioMetadata;
+
+    fn deref(&self) -> &Self::Target {
+        &self.metadata
     }
 }
 

@@ -1,7 +1,9 @@
 use ez_audi::{wav::WavAudio, traits::AudioFileTrait};
 
 fn main() {
+    
     let wav_audio = WavAudio::new("test_assets/9000.wav").unwrap();
+    println!("Sample type: {:?}", wav_audio.sample_type());
 
     let stream = wav_audio.play_on_default_output().unwrap();
 
