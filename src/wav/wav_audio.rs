@@ -1,14 +1,14 @@
-use std::io::{BufReader, Read, BufRead};
 use std::fs::File;
+use std::io::{BufRead, BufReader, Read};
 use std::ops::Deref;
 
+use crate::cpal_abstraction::{SampleType, Samples, SamplesTrait};
+use crate::errors::Error;
 use crate::errors::PlayError;
 use crate::traits::AudioFileTrait;
-use crate::SampleMetadata;
-use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait};
 use crate::wav::utils;
 use crate::wav::AudioFormat;
-use crate::errors::Error;
+use crate::SampleMetadata;
 
 const FMT_ID_END_BYTE: u8 = 32;
 /// The block size (without the "fmt " id)
@@ -50,7 +50,11 @@ impl WavAudioMetadata {
         let audio_format_value = u16::from_le_bytes(fmt_block[4..6].try_into().unwrap());
         let audio_format = match audio_format_value {
             1 => AudioFormat::LPcm,
-            _ => return Err(PlayError::Unsupported("audio format other than LPCM".to_string())),
+            _ => {
+                return Err(PlayError::Unsupported(
+                    "audio format other than LPCM".to_string(),
+                ))
+            }
         };
 
         let channels = u16::from_le_bytes(fmt_block[6..8].try_into().unwrap());
@@ -105,7 +109,7 @@ impl WavAudioMetadata {
         match self.bits_per_sample {
             8 => SampleType::U8,
             16 => SampleType::I16,
-            _ => todo!("Unsupported")
+            _ => todo!("Unsupported"),
         }
     }
 }
@@ -124,9 +128,9 @@ impl WavAudio {
         if !utils::file_is_wav(path)? {
             return Err(PlayError::WrongFileType);
         }
-        
+
         let metadata = WavAudioMetadata::new(&path)?;
-        
+
         let audio = WavAudio {
             file_path: path.to_string(),
             metadata,
@@ -139,7 +143,7 @@ impl WavAudio {
         match self.metadata.sample_type() {
             SampleType::U8 => return Ok(Box::new(self.get_samples_u8()?)),
             SampleType::I16 => return Ok(Box::new(self.get_samples_i16()?)),
-            _ => todo!("unsupported")
+            _ => todo!("unsupported"),
         }
     }
 
@@ -156,24 +160,29 @@ impl WavAudio {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes)?;
 
-        return Ok(bytes)
+        return Ok(bytes);
     }
 
     fn get_samples_u8(&self) -> Error<Samples<u8>> {
         let samples_bytes = self.get_samples_bytes()?;
 
-        self.audio_format.bytes_to_u8_samples(&samples_bytes, self.metadata.clone())
+        self.audio_format
+            .bytes_to_u8_samples(&samples_bytes, self.metadata.clone())
     }
 
     fn get_samples_i16(&self) -> Error<Samples<i16>> {
         let samples_bytes = self.get_samples_bytes()?;
 
-        self.audio_format.bytes_to_i16_samples(&samples_bytes, self.metadata.clone())
+        self.audio_format
+            .bytes_to_i16_samples(&samples_bytes, self.metadata.clone())
     }
 }
 
 impl AudioFileTrait for WavAudio {
-    fn play(&self, device: crate::cpal_abstraction::Device) -> Result<crate::cpal_abstraction::Stream, PlayError> {
+    fn play(
+        &self,
+        device: crate::cpal_abstraction::Device,
+    ) -> Result<crate::cpal_abstraction::Stream, PlayError> {
         let stream = self.get_samples()?.play_on_device(device);
 
         Ok(stream)

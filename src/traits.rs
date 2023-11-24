@@ -8,7 +8,11 @@ pub trait AudioFileTrait {
     fn play_on_default_output(&self) -> Result<Stream, PlayError> {
         let device = match Device::default_output() {
             Some(d) => d,
-            None => return Err(PlayError::DeviceDoesNotExist { name: "default".to_string() })
+            None => {
+                return Err(PlayError::DeviceDoesNotExist {
+                    name: "default".to_string(),
+                })
+            }
         };
 
         self.play(device)

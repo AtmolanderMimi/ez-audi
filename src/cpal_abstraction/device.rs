@@ -1,8 +1,12 @@
 use std::fmt::Debug;
 
-use cpal::{self, traits::{HostTrait, DeviceTrait, StreamTrait}, Host};
+use cpal::{
+    self,
+    traits::{DeviceTrait, HostTrait, StreamTrait},
+    Host,
+};
 
-use super::{config, Samples, Sample, Stream};
+use super::{config, Sample, Samples, Stream};
 
 pub struct Device {
     device: cpal::Device,
@@ -10,20 +14,20 @@ pub struct Device {
 
 impl Device {
     fn new(device: cpal::Device) -> Device {
-        Device {
-            device
-        }
+        Device { device }
     }
 
     pub fn play_default_output<T: Sample>(samples: Samples<T>) -> Stream {
-        let device = Device::default_output()
-            .expect("no default output device on the default host");
-    
+        let device =
+            Device::default_output().expect("no default output device on the default host");
+
         device.play(samples)
     }
 
     pub fn play<T: Sample>(&self, samples: Samples<T>) -> Stream {
-        let config_range = self.inner_device().supported_output_configs()
+        let config_range = self
+            .inner_device()
+            .supported_output_configs()
             .expect("default output device of default host has no output configs");
 
         let metadata = samples.metadata().into();
@@ -47,7 +51,7 @@ impl Device {
             // FIXME: Here too,
             panic!("{:?}", err);
         };
-        
+
         let stream = self
             .inner_device()
             .build_output_stream(&config.config(), data_callback, error_callback, None)
@@ -65,20 +69,22 @@ impl Device {
         let hosts = cpal::available_hosts();
 
         // Gets all hosts, discards ones that cause an error
-        let hosts = hosts.into_iter()
+        let hosts = hosts
+            .into_iter()
             .map(|id| cpal::host_from_id(id))
             .filter(|r| r.is_ok())
             .map(|r| r.unwrap())
             .collect::<Vec<Host>>();
 
         // Gets all devices form all hosts, discards ones that cause an error
-        hosts.into_iter()
+        hosts
+            .into_iter()
             .map(|h| h.devices())
             .filter(|r| r.is_ok())
             .map(|r| r.unwrap().collect::<Vec<cpal::Device>>())
             .flatten()
             .collect()
-    } 
+    }
 
     /// Returns the default output device of the default host.
     /// Be aware that there may be none
@@ -92,8 +98,9 @@ impl Device {
     pub fn list_device_names() -> Vec<String> {
         let devices = Device::list_cpal_devices();
 
-        // Gets all device names, discards ones that cause an error 
-        devices.into_iter()
+        // Gets all device names, discards ones that cause an error
+        devices
+            .into_iter()
             .map(|d| d.name())
             .filter(|r| r.is_ok())
             .map(|r| r.unwrap())
@@ -103,7 +110,8 @@ impl Device {
     pub fn new_from_name(device_name: &str) -> Option<Device> {
         let devices = Device::list_cpal_devices();
 
-        let the_device = devices.into_iter()
+        let the_device = devices
+            .into_iter()
             .filter(|d| d.name().unwrap_or("".to_string()) == device_name)
             .next()?;
 
@@ -121,7 +129,7 @@ impl Device {
     pub fn name(&self) -> Option<String> {
         match self.device.name() {
             Ok(n) => Some(n),
-            Err(_) => None,   
+            Err(_) => None,
         }
     }
 }

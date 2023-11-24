@@ -1,5 +1,5 @@
-pub mod wav;
 mod errors;
+pub mod wav;
 pub use errors::PlayError;
 pub mod traits;
 // TODO: Rethink Interface design

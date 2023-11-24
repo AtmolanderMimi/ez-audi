@@ -3,14 +3,12 @@ use cpal::traits::StreamTrait;
 
 /// An audio stream, stops the stream when dropped
 pub struct Stream {
-    stream: cpal::Stream
+    stream: cpal::Stream,
 }
 
 impl Stream {
     fn new(stream: cpal::Stream) -> Stream {
-        Stream {
-            stream,
-        }
+        Stream { stream }
     }
 
     /// Continues/Starts the audio from where it ended
