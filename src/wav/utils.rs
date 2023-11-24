@@ -1,5 +1,6 @@
-use std::fs::File;
 use std::io::{self, BufReader, Read};
+use std::fs::File;
+
 
 pub fn file_is_wav(path: &str) -> Result<bool, io::Error> {
     let f = File::open(path)?;

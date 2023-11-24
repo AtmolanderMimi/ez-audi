@@ -14,7 +14,10 @@ pub struct Samples<T: Sample> {
 
 impl<T: Sample> Samples<T> {
     pub fn new(samples: Vec<T>, metadata: SampleMetadata) -> Samples<T> {
-        Samples { samples, metadata }
+        Samples {
+            samples,
+            metadata,
+        }
     }
 
     /// Gets the samples, but then destroys the struct
@@ -57,7 +60,7 @@ pub struct SampleMetadata {
 
 impl SampleMetadata {
     pub fn new(channels: u16, sample_rate: u32, sample_type: SampleType) -> SampleMetadata {
-        SampleMetadata {
+        SampleMetadata { 
             channels,
             sample_rate,
             sample_type,
@@ -71,12 +74,7 @@ impl From<&SampleMetadata> for cpal::SupportedStreamConfig {
         let sample_rate = cpal::SampleRate(value.sample_rate);
         let sample_type = value.sample_type.clone().into();
 
-        cpal::SupportedStreamConfig::new(
-            channels,
-            sample_rate,
-            cpal::SupportedBufferSize::Unknown,
-            sample_type,
-        )
+        cpal::SupportedStreamConfig::new(channels, sample_rate, cpal::SupportedBufferSize::Unknown, sample_type)
     }
 }
 

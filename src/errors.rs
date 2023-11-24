@@ -1,4 +1,4 @@
-use std::{error, fmt::Display, io};
+use std::{io, fmt::Display, error};
 
 pub type Error<T> = Result<T, PlayError>;
 
@@ -8,7 +8,7 @@ pub enum PlayError {
     FileNotAccessible(io::Error),
     WrongFileType,
     DeviceDoesNotSupportAudioSettings,
-    DeviceDoesNotExist { name: String },
+    DeviceDoesNotExist{ name: String },
     Unsupported(String),
 }
 
@@ -16,16 +16,10 @@ impl Display for PlayError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::TimeOutOfBounds => f.write_str("the time specified is out of bounds"),
-            Self::FileNotAccessible(_) => {
-                f.write_str("there was an error while trying to access the file")
-            }
+            Self::FileNotAccessible(_) => f.write_str("there was an error while trying to access the file"),
             Self::WrongFileType => f.write_str("file was of the wrong file type"),
-            Self::DeviceDoesNotExist { name: n } => {
-                f.write_str(&format!("the device '{n}' does not exist"))
-            }
-            Self::DeviceDoesNotSupportAudioSettings => {
-                f.write_str("the device does not support the settings of the audio file")
-            }
+            Self::DeviceDoesNotExist{ name: n } => f.write_str(&format!("the device '{n}' does not exist")),
+            Self::DeviceDoesNotSupportAudioSettings => f.write_str("the device does not support the settings of the audio file"),
             Self::Unsupported(e) => f.write_str(&format!("ez_audi does not support '{}'", e)),
         }
     }
@@ -37,7 +31,7 @@ impl error::Error for PlayError {
             Self::TimeOutOfBounds => None,
             Self::FileNotAccessible(e) => Some(e),
             Self::WrongFileType => None,
-            Self::DeviceDoesNotExist { .. } => None,
+            Self::DeviceDoesNotExist{ .. } => None,
             Self::DeviceDoesNotSupportAudioSettings => None,
             Self::Unsupported(_) => None,
         }

@@ -2,6 +2,6 @@ pub mod config;
 mod device;
 pub use device::Device;
 mod samples;
-pub use samples::{Sample, SampleMetadata, SampleType, Samples, SamplesTrait};
+pub use samples::{Samples, Sample, SampleMetadata, SampleType, SamplesTrait};
 mod stream;
 pub use stream::Stream;
