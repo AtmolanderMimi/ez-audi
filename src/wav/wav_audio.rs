@@ -50,7 +50,7 @@ impl WavAudioMetadata {
         let audio_format_value = u16::from_le_bytes(fmt_block[4..6].try_into().unwrap());
         let audio_format = match audio_format_value {
             1 => AudioFormat::LPcm,
-            _ => return Err(PlayError::Unsuported("audio format other than LPCM".to_string())),
+            _ => return Err(PlayError::Unsupported("audio format other than LPCM".to_string())),
         };
 
         let channels = u16::from_le_bytes(fmt_block[6..8].try_into().unwrap());
@@ -161,26 +161,14 @@ impl WavAudio {
 
     fn get_samples_u8(&self) -> Error<Samples<u8>> {
         let samples_bytes = self.get_samples_bytes()?;
-        let metadata = self.metadata.clone().into();
 
-        let sample_containter = Samples::new(samples_bytes, metadata);
-
-        Ok(sample_containter)
+        self.audio_format.bytes_to_u8_samples(&samples_bytes, self.metadata.clone())
     }
 
     fn get_samples_i16(&self) -> Error<Samples<i16>> {
-        let bytes = self.get_samples_bytes()?;
-        let metadata = self.metadata.clone().into();
+        let samples_bytes = self.get_samples_bytes()?;
 
-        let mut samples_array = Vec::new();
-        for i in 0..((bytes.len() / 2)) {
-            let sample = i16::from_le_bytes([bytes[i*2], bytes[(i*2)+1]]);
-            samples_array.push(sample);
-        }
-
-        let sample_containter = Samples::new(samples_array, metadata);
-
-        Ok(sample_containter)
+        self.audio_format.bytes_to_i16_samples(&samples_bytes, self.metadata.clone())
     }
 }
 

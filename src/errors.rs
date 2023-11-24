@@ -9,7 +9,7 @@ pub enum PlayError {
     WrongFileType,
     DeviceDoesNotSupportAudioSettings,
     DeviceDoesNotExist{ name: String },
-    Unsuported(String),
+    Unsupported(String),
 }
 
 impl Display for PlayError {
@@ -20,7 +20,7 @@ impl Display for PlayError {
             Self::WrongFileType => f.write_str("file was of the wrong file type"),
             Self::DeviceDoesNotExist{ name: n } => f.write_str(&format!("the device '{n}' does not exist")),
             Self::DeviceDoesNotSupportAudioSettings => f.write_str("the device does not support the settings of the audio file"),
-            Self::Unsuported(e) => f.write_str(&format!("ez_audi does not support '{}'", e)),
+            Self::Unsupported(e) => f.write_str(&format!("ez_audi does not support '{}'", e)),
         }
     }
 }
@@ -33,7 +33,7 @@ impl error::Error for PlayError {
             Self::WrongFileType => None,
             Self::DeviceDoesNotExist{ .. } => None,
             Self::DeviceDoesNotSupportAudioSettings => None,
-            Self::Unsuported(_) => None,
+            Self::Unsupported(_) => None,
         }
     }
 }
