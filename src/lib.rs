@@ -4,6 +4,6 @@ pub use errors::PlayError;
 pub mod traits;
 // TODO: Rethink Interface design
 pub mod cpal_abstraction;
-use cpal_abstraction::{SampleMetadata, SampleType};
+use cpal_abstraction::SampleMetadata;
 
 mod audio_codecs;

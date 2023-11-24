@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use cpal::{self, traits::{HostTrait, DeviceTrait, StreamTrait}, Host};
+use cpal::{self, traits::{HostTrait, DeviceTrait}, Host};
 
 use super::{config, Samples, Sample, Stream};
 
@@ -22,7 +22,7 @@ impl Device {
         device.play(samples)
     }
 
-    pub fn play<T: Sample>(&self, samples: Samples<T>) -> Stream {
+    pub fn create_stream<T: Sample>(&self, samples: Samples<T>) -> Stream {
         let config_range = self.inner_device().supported_output_configs()
             .expect("default output device of default host has no output configs");
 
@@ -34,7 +34,7 @@ impl Device {
         let config = config.with_sample_rate(sample_rate);
 
         let mut samples_iter = samples.samples().into_iter();
-        let data_callback = move |samples_out: &mut [T], info: &_| {
+        let data_callback = move |samples_out: &mut [T], _info: &_| {
             for sample in samples_out {
                 *sample = match samples_iter.next() {
                     Some(s) => s,
@@ -54,7 +54,12 @@ impl Device {
             // FIXME: I will puke uncontrolably if this is not removed within a reasonable amount of time :)
             .unwrap();
 
-        stream.play();
+        stream.into()
+    }
+
+    pub fn play<T: Sample>(&self, samples: Samples<T>) -> Stream {
+        let stream = self.create_stream(samples);
+        stream.start();
 
         stream.into()
     }
