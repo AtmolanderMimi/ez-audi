@@ -4,7 +4,7 @@ use std::ops::Deref;
 
 use crate::errors::PlayError;
 use crate::traits::AudioFileTrait;
-use crate::SampleMetadata;
+use crate::cpal_abstraction::SampleMetadata;
 use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait};
 use crate::wav::utils;
 use crate::wav::AudioFormat;

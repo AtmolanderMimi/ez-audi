@@ -1,4 +1,5 @@
-use ez_audi::{wav::WavAudio, traits::AudioFileTrait};
+use ez_audi::audio_types::WavAudio;
+use ez_audi::public_traits::*;
 
 fn main() {
     

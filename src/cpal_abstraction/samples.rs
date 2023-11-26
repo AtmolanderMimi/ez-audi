@@ -30,21 +30,17 @@ impl<T: Sample> Samples<T> {
         &self.metadata
     }
 }
+
+/// This is used to be able to store Samples Struct of multiple generic type in Box
 pub trait SamplesTrait {
     /// Consumes the samples and plays on the specified device
     fn play_on_device(&self, device: Device) -> Stream;
-
-    fn metadata(&self) -> SampleMetadata;
 }
 
 impl<T: Sample> SamplesTrait for Samples<T> {
     fn play_on_device(&self, device: Device) -> Stream {
         // TODO: Cloneing here is not a good idea
         device.play(self.clone())
-    }
-
-    fn metadata(&self) -> SampleMetadata {
-        self.metadata.clone()
     }
 }
 
