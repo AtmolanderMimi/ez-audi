@@ -1,13 +1,13 @@
 use crate::{errors::Error, cpal_abstraction::{Samples, SampleMetadata}};
 
-use super::BytesToSamples;
+use super::AudioCodecTrait;
 
-impl BytesToSamples for LPcm {
-    fn bytes_to_u8_samples(bytes: &Vec<u8>, metadata: impl Into<SampleMetadata>) -> Error<Samples<u8>> {
+impl AudioCodecTrait for LPcm {
+    fn bytes_to_u8_samples(&self, bytes: &Vec<u8>, metadata: impl Into<SampleMetadata>) -> Error<Samples<u8>> {
         Ok(Samples::new(bytes.clone(), metadata.into())) 
     }
 
-    fn bytes_to_i16_samples(bytes: &Vec<u8>, metadata: impl Into<SampleMetadata>) -> Error<Samples<i16>> {
+    fn bytes_to_i16_samples(&self, bytes: &Vec<u8>, metadata: impl Into<SampleMetadata>) -> Error<Samples<i16>> {
         let mut samples_array = Vec::new();
         for i in 0..((bytes.len() / 2)) {
             let sample = i16::from_le_bytes([bytes[i*2], bytes[(i*2)+1]]);
@@ -19,4 +19,5 @@ impl BytesToSamples for LPcm {
 }
 
 /// Linear Pulse Modulation *Thighy* struct, contains all the methods to interpret bytes formated via LPcm into samples
+#[derive(Debug, Clone, Default)]
 pub struct LPcm;

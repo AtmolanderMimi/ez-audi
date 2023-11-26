@@ -7,7 +7,7 @@ use crate::traits::AudioFileTrait;
 use crate::cpal_abstraction::SampleMetadata;
 use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait};
 use crate::wav::utils;
-use crate::wav::AudioFormat;
+use crate::audio_codecs::{AudioCodec, AudioCodecTrait};
 use crate::errors::Error;
 
 const FMT_ID_END_BYTE: u8 = 32;
@@ -25,7 +25,7 @@ fn read_until_fmt_block_and_pass(reader: &mut BufReader<File>) -> Result<(), Pla
 /// Info contained in the WAVE file header
 pub struct WavAudioMetadata {
     /// The way the data is read
-    audio_format: AudioFormat,
+    audio_format: AudioCodec,
     /// Numbers of channels: mono = 1, Stereo = 2, etc...
     channels: u16,
     /// The number of samples per second (most likely)
@@ -49,7 +49,7 @@ impl WavAudioMetadata {
 
         let audio_format_value = u16::from_le_bytes(fmt_block[4..6].try_into().unwrap());
         let audio_format = match audio_format_value {
-            1 => AudioFormat::LPcm,
+            1 => AudioCodec::LPcm,
             _ => return Err(PlayError::Unsupported("audio format other than LPCM".to_string())),
         };
 
@@ -70,7 +70,7 @@ impl WavAudioMetadata {
     }
 
     /// Returns the audio format
-    pub fn audio_format(&self) -> AudioFormat {
+    pub fn audio_format(&self) -> AudioCodec {
         self.audio_format.clone()
     }
 
@@ -204,7 +204,7 @@ mod tests {
     fn metadata_is_valid() {
         let meta = WavAudioMetadata::new("test_assets/9000.wav").unwrap();
 
-        assert_eq!(meta.audio_format, AudioFormat::LPcm);
+        assert_eq!(meta.audio_format, AudioCodec::LPcm);
 
         assert_eq!(meta.channels, 1);
 
