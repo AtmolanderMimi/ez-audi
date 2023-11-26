@@ -4,7 +4,7 @@ use ez_audi::public_traits::*;
 fn main() {
     
     let wav_audio = WavAudio::new("test_assets/9000.wav").unwrap();
-    println!("Sample type: {:?}", wav_audio.sample_type());
+    println!("Sample type: {:?}", wav_audio.metadata().sample_type());
 
     let stream = wav_audio.play_on_default_output().unwrap();
 

@@ -3,7 +3,7 @@ use std::fs::File;
 use std::ops::Deref;
 
 use crate::errors::PlayError;
-use crate::traits::AudioFileTrait;
+use crate::traits::{AudioFileTrait, AudioMetadataTrait};
 use crate::cpal_abstraction::SampleMetadata;
 use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait};
 use crate::wav::utils;
@@ -24,6 +24,8 @@ fn read_until_fmt_block_and_pass(reader: &mut BufReader<File>) -> Result<(), Pla
 #[derive(Debug, Clone)]
 /// Info contained in the WAVE file header
 pub struct WavAudioMetadata {
+    /// Where the file is
+    file_path: String,
     /// The way the data is read
     audio_format: AudioCodec,
     /// Numbers of channels: mono = 1, Stereo = 2, etc...
@@ -60,6 +62,7 @@ impl WavAudioMetadata {
         let bits_per_sample = u16::from_le_bytes(fmt_block[18..20].try_into().unwrap());
 
         let metadata = WavAudioMetadata {
+            file_path: path.to_string(),
             audio_format,
             sample_rate,
             channels,
@@ -67,6 +70,11 @@ impl WavAudioMetadata {
         };
 
         Ok(metadata)
+    }
+
+    /// Returns the file path
+    pub fn file_path(&self) -> String {
+        self.file_path.clone()
     }
 
     /// Returns the audio format
@@ -107,6 +115,28 @@ impl WavAudioMetadata {
             16 => SampleType::I16,
             _ => todo!("Unsupported")
         }
+    }
+}
+
+impl AudioMetadataTrait for WavAudioMetadata {
+    fn file_path(&self) -> Option<String> {
+        Some(self.file_path())
+    }
+
+    fn audio_codec(&self) -> AudioCodec {
+        self.audio_format()
+    }
+
+    fn channels(&self) -> u32 {
+        self.channels() as u32
+    }
+
+    fn sample_rate(&self) -> u32 {
+        self.sample_rate()
+    }
+
+    fn sample_type(&self) -> Option<SampleType> {
+        Some(self.sample_type())
     }
 }
 
@@ -177,6 +207,10 @@ impl AudioFileTrait for WavAudio {
         let stream = self.get_samples()?.play_on_device(device);
 
         Ok(stream)
+    }
+
+    fn metadata(&self) -> Box<dyn AudioMetadataTrait> {
+        Box::new(self.metadata.clone())
     }
 }
 

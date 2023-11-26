@@ -1,5 +1,7 @@
 use cpal;
 
+use crate::{traits::AudioMetadataTrait, audio_codecs::AudioCodec};
+
 use super::{Device, Stream};
 
 pub trait Sample: cpal::SizedSample + std::marker::Send + 'static {}
@@ -7,6 +9,7 @@ pub trait Sample: cpal::SizedSample + std::marker::Send + 'static {}
 impl<T: cpal::SizedSample + std::marker::Send + 'static> Sample for T {}
 
 #[derive(Debug, Clone)]
+/// Samples stored as LPcm ready to be send to audio streams
 pub struct Samples<T: Sample> {
     samples: Vec<T>,
     metadata: SampleMetadata,
@@ -61,6 +64,29 @@ impl SampleMetadata {
             sample_rate,
             sample_type,
         }
+    }
+}
+
+impl AudioMetadataTrait for SampleMetadata {
+    fn file_path(&self) -> Option<String> {
+        None
+    }
+
+    // TODO: Is it right to say that the samples are in LPcm since don't have to got through any other codec? 
+    fn audio_codec(&self) -> crate::audio_codecs::AudioCodec {
+        AudioCodec::LPcm
+    }
+
+    fn channels(&self) -> u32 {
+        self.channels as u32
+    }
+
+    fn sample_rate(&self) -> u32 {
+        self.sample_rate
+    }
+
+    fn sample_type(&self) -> Option<SampleType> {
+        Some(self.sample_type.clone())
     }
 }
 
