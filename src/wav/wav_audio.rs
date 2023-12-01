@@ -4,8 +4,8 @@ use std::ops::Deref;
 
 use crate::errors::PlayError;
 use crate::traits::{AudioFileTrait, AudioMetadataTrait};
-use crate::cpal_abstraction::SampleMetadata;
-use crate::cpal_abstraction::{Samples, SampleType, SamplesTrait};
+use crate::cpal_abstraction::{SamplesMetadata, SamplesPlayerTrait, SamplesPlayer, Sample};
+use crate::cpal_abstraction::{Samples, SampleType};
 use crate::wav::utils;
 use crate::audio_codecs::{AudioCodec, AudioCodecTrait};
 use crate::errors::Error;
@@ -165,9 +165,12 @@ impl WavAudio {
         Ok(audio)
     }
 
-    pub fn get_samples(&self) -> Error<Box<dyn SamplesTrait>> {
+    pub fn make_player<T>(&self) -> Error<Box<dyn SamplesPlayerTrait<T>>> {
         match self.metadata.sample_type() {
-            SampleType::U8 => return Ok(Box::new(self.get_samples_u8()?)),
+            SampleType::U8 => {
+                let samples = self.get_samples_u8()?;
+                return Ok(Box::new(SamplesPlayer::new(samples)));
+            },
             SampleType::I16 => return Ok(Box::new(self.get_samples_i16()?)),
             _ => todo!("unsupported")
         }
@@ -222,11 +225,11 @@ impl Deref for WavAudio {
     }
 }
 
-impl From<WavAudioMetadata> for SampleMetadata {
+impl From<WavAudioMetadata> for SamplesMetadata {
     fn from(value: WavAudioMetadata) -> Self {
         let sample_type = value.sample_type();
 
-        SampleMetadata::new(value.channels, value.sample_rate, sample_type)
+        SamplesMetadata::new(value.channels, value.sample_rate, sample_type)
     }
 }
 

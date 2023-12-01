@@ -1,10 +1,12 @@
 use ez_audi::audio_types::WavAudio;
-use ez_audi::public_traits::*;
+use ez_audi::{public_traits::*, Device};
 
 fn main() {
     
     let wav_audio = WavAudio::new("test_assets/9000.wav").unwrap();
     println!("Sample type: {:?}", wav_audio.metadata().sample_type());
+    let samples = wav_audio.get_samples().unwrap();
+    println!("Sample type sample type sample(????): {:?}", samples.metadata().sample_type());
 
     let stream = wav_audio.play_on_default_output().unwrap();
 

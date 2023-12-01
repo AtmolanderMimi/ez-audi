@@ -1,13 +1,13 @@
-use crate::{errors::Error, cpal_abstraction::{Samples, SampleMetadata}};
+use crate::{errors::Error, cpal_abstraction::{Samples, SamplesMetadata}};
 
 use super::AudioCodecTrait;
 
 impl AudioCodecTrait for LPcm {
-    fn bytes_to_u8_samples(&self, bytes: &Vec<u8>, metadata: impl Into<SampleMetadata>) -> Error<Samples<u8>> {
+    fn bytes_to_u8_samples(&self, bytes: &Vec<u8>, metadata: impl Into<SamplesMetadata>) -> Error<Samples<u8>> {
         Ok(Samples::new(bytes.clone(), metadata.into())) 
     }
 
-    fn bytes_to_i16_samples(&self, bytes: &Vec<u8>, metadata: impl Into<SampleMetadata>) -> Error<Samples<i16>> {
+    fn bytes_to_i16_samples(&self, bytes: &Vec<u8>, metadata: impl Into<SamplesMetadata>) -> Error<Samples<i16>> {
         let mut samples_array = Vec::new();
         for i in 0..((bytes.len() / 2)) {
             let sample = i16::from_le_bytes([bytes[i*2], bytes[(i*2)+1]]);
