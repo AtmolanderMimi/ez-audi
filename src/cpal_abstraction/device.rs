@@ -174,11 +174,11 @@ impl Device {
         }
     }
 
-    pub fn play_default_output<T: Sample>(player: &mut impl SamplesPlayerTrait) {
+    pub fn play_default_output(player: &mut impl SamplesPlayerTrait) {
         let device = Device::default_output()
             .expect("no default output device on the default host");
     
-        player.play_on_device(Device::default_output().expect("no default output found"));
+        player.play_on_device(device);
     }
 
 
@@ -199,14 +199,14 @@ impl Device {
 
         let mut index = 0;
         let data_callback = move |samples_out: &mut [T], _info: &_| {
-            index += 1;
             // TODO: This should maybe not crash
             let samples = samples.lock().expect("samples are inaccessible to audio stream");
             for sample in samples_out {
                 *sample = match samples.samples.get(index) {
                     Some(s) => *s,
                     None => T::EQUILIBRIUM,
-                }
+                };
+                index += 1;
             }
         };
 

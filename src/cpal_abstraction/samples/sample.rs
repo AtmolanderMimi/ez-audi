@@ -1,8 +1,10 @@
+use std::fmt::Debug;
+
 use cpal;
 
-pub trait Sample: cpal::SizedSample + cpal::FromSample<f32> + std::marker::Send + 'static {}
+pub trait Sample: cpal::SizedSample + cpal::FromSample<f32> + std::marker::Send + 'static + Debug {}
 
-impl<T: cpal::SizedSample + cpal::FromSample<f32> + std::marker::Send + 'static> Sample for T
+impl<T: cpal::SizedSample + cpal::FromSample<f32> + std::marker::Send + 'static + Debug> Sample for T
 where f32: cpal::FromSample<T> {}
 
 #[derive(Debug, Clone)]
