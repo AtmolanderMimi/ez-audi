@@ -1,11 +1,9 @@
-use cpal::Sample as CpalSampleTrait;
-
-use super::{Samples, Sample, SamplesTrait};
+use super::Samples;
 
 /// A trait to implement on your sample modifiers (aka effects). 
 /// Note that the modifiers are made to act upon cpal samples, go see the Sample trait cpal provides.
 pub trait ModifierTrait {
-    /// 
+    /// Modifies the samples it is used upon
     fn modify(&self, samples: Samples<f32>) -> Samples<f32>;
 }
 
