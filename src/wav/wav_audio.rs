@@ -165,13 +165,16 @@ impl WavAudio {
         Ok(audio)
     }
 
-    pub fn make_player<T>(&self) -> Error<Box<dyn SamplesPlayerTrait<T>>> {
+    pub fn make_player(&self) -> Error<Box<dyn SamplesPlayerTrait>> {
         match self.metadata.sample_type() {
             SampleType::U8 => {
                 let samples = self.get_samples_u8()?;
                 return Ok(Box::new(SamplesPlayer::new(samples)));
             },
-            SampleType::I16 => return Ok(Box::new(self.get_samples_i16()?)),
+            SampleType::I16 => {
+                let samples = self.get_samples_i16()?;
+                return Ok(Box::new(SamplesPlayer::new(samples)));
+            },
             _ => todo!("unsupported")
         }
     }
@@ -206,10 +209,11 @@ impl WavAudio {
 }
 
 impl AudioFileTrait for WavAudio {
-    fn play(&self, device: crate::cpal_abstraction::Device) -> Result<crate::cpal_abstraction::Stream, PlayError> {
-        let stream = self.get_samples()?.play_on_device(device);
+    fn play(&self, device: crate::cpal_abstraction::Device) -> Result<Box<dyn SamplesPlayerTrait>, PlayError> {
+        let mut player = self.make_player()?;
+        player.play_on_device(device);
 
-        Ok(stream)
+        Ok(player)
     }
 
     fn metadata(&self) -> Box<dyn AudioMetadataTrait> {

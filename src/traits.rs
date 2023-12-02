@@ -1,12 +1,12 @@
 use crate::audio_codecs::AudioCodec;
-use crate::cpal_abstraction::{Device, Stream, SampleType};
+use crate::cpal_abstraction::{Device, SampleType, SamplesPlayerTrait};
 use crate::errors::PlayError;
 
 pub trait AudioFileTrait {
     // Starts playing the audio from a certain duration
-    fn play(&self, device: Device) -> Result<Stream, PlayError>;
+    fn play(&self, device: Device) -> Result<Box<dyn SamplesPlayerTrait>, PlayError>;
 
-    fn play_on_default_output(&self) -> Result<Stream, PlayError> {
+    fn play_on_default_output(&self) -> Result<Box<dyn SamplesPlayerTrait>, PlayError> {
         let device = match Device::default_output() {
             Some(d) => d,
             None => return Err(PlayError::DeviceDoesNotExist { name: "default".to_string() })

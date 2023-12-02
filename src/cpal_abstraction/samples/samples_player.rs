@@ -1,21 +1,20 @@
-use std::sync::{Mutex, MutexGuard};
+use std::sync::{Mutex, MutexGuard, Arc};
 
-use cpal::traits::StreamTrait;
+use crate::{Device, traits::AudioMetadataTrait, cpal_abstraction};
 
-use crate::{Device, traits::AudioMetadataTrait};
-
-use super::{Sample, Samples, ModifierTrait};
+use super::{Sample, Samples, ModifierTrait, SamplesTrait};
 
 /// Manages the applying of modifiers and the sending of samples to audio streams
 pub struct SamplesPlayer<T: Sample> {
     sample_index: usize,
     original_samples: Samples<T>,
-    modifiers: Vec<Box<dyn ModifierTrait<T>>>,
-    samples_with_modifiers: Option<Mutex<Samples<T>>>,
-    stream: Option<cpal::Stream>,
+    modifiers: Vec<Box<dyn ModifierTrait>>,
+    samples_with_modifiers: Option<Arc<Mutex<Samples<T>>>>,
+    stream: Option<cpal_abstraction::Stream>,
 }
 
-impl<T: Sample> SamplesPlayer<T> {
+impl<T: Sample> SamplesPlayer<T>
+where f32: cpal::FromSample<T> {
     pub fn new(samples: Samples<T>) -> SamplesPlayer<T> {
         Self {
             sample_index: 0,
@@ -24,16 +23,6 @@ impl<T: Sample> SamplesPlayer<T> {
             samples_with_modifiers: None,
             stream: None,
         }
-    }
-
-    // Applies all the modifiers
-    fn apply_modifiers(&mut self) {
-        let mut modified_samples = self.original_samples.clone();
-        for modifier in &self.modifiers {
-            modified_samples = modifier.modify(&modified_samples)
-        }
-
-        self.change_samples_with_modifiers(modified_samples);
     }
 
     fn aquire_samples_with_modifiers_mutex_guard(&self) -> Option<MutexGuard<Samples<T>>> {
@@ -51,33 +40,45 @@ impl<T: Sample> SamplesPlayer<T> {
     }
 
     fn change_samples_with_modifiers(&mut self, samples: Samples<T>) {
-        let mut guard = match self.aquire_samples_with_modifiers_mutex_guard() {
-            // If the lock is failed to be aquired then it is probably because the thread that sent
-            // the samples to the audio stream failed and so another mutex should be made when
-            // the SamplesPlayer is used for another stream
-            Some(g) => g,
-            None => return,
-        };
+        let mutex_guard_option = self.aquire_samples_with_modifiers_mutex_guard();
 
-        *guard = samples;
+        if let Some(mut guard) = mutex_guard_option {
+            *guard = samples;
+        } else {
+            drop(mutex_guard_option);
+            self.samples_with_modifiers = Some(Arc::new(Mutex::new(samples)))
+        }
+    }
+
+    // Applies all the modifiers
+    fn apply_modifiers(&mut self) {
+        let mut modified_samples = self.original_samples.clone().into_f32_samples();
+        for modifier in &self.modifiers {
+            modified_samples = modifier.modify(modified_samples);
+        }
+
+        self.change_samples_with_modifiers(modified_samples.into_t_samples());
+    }
+
+    fn set_stream(&mut self, stream: cpal_abstraction::Stream) {
+        // TODO: Should not have to put the whole original samples here since
+        // it is reset when applying the modifiers
+        self.samples_with_modifiers = Some(Arc::new(Mutex::new(self.original_samples.clone())));
+        self.apply_modifiers();
+
+        self.stream = Some(stream);
     }
 }
 
-pub trait SamplesPlayerTrait<T: Sample> {
+pub trait SamplesPlayerTrait {
     /// Returns the metadata of the samples
     fn metadata(&self) -> Box<dyn AudioMetadataTrait>;
 
     /// Adds a modifier
-    fn add_modifier(&mut self, modifier: Box<dyn ModifierTrait<T>>);
+    fn add_modifier(&mut self, modifier: Box<dyn ModifierTrait>);
 
     /// Clears all modifiers and their effects
     fn clear_modifiers(&mut self);
-
-    /// Gets the next sample
-    fn next_sample(&self) -> Option<T>;
-
-    /// Sets one of the fields of the player to a stream
-    fn set_stream(&mut self, stream: cpal::Stream);
 
     /// Starts/Continues the playing
     fn start(&self);
@@ -87,8 +88,6 @@ pub trait SamplesPlayerTrait<T: Sample> {
 
     /// Starts playing on a device
     fn play_on_device(&mut self, device: Device) {
-        // FIXME: Get Device struct to comply with the new system
-        todo!("Here")
     }
 
     fn play_on_default(&mut self) {
@@ -96,12 +95,13 @@ pub trait SamplesPlayerTrait<T: Sample> {
     }
 }
 
-impl<T: Sample> SamplesPlayerTrait<T> for SamplesPlayer<T> {
+impl<T: Sample> SamplesPlayerTrait for SamplesPlayer<T>
+where f32: cpal::FromSample<T> {
     fn metadata(&self) -> Box<dyn AudioMetadataTrait> {
         Box::new(self.original_samples.metadata.clone())
     }
 
-    fn add_modifier(&mut self, modifier: Box<dyn ModifierTrait<T>>) {
+    fn add_modifier(&mut self, modifier: Box<dyn ModifierTrait>) {
         self.modifiers.push(modifier);
         
         self.apply_modifiers();
@@ -113,36 +113,13 @@ impl<T: Sample> SamplesPlayerTrait<T> for SamplesPlayer<T> {
         self.apply_modifiers();
     }
 
-    fn next_sample(&self) -> Option<T> {
-        self.sample_index += 1;
-
-        let samples = match self.aquire_samples_with_modifiers_mutex_guard() {
-            Some(s) => s,
-            None => return None,
-        };
-        
-        let next_sample = samples.samples.get(self.sample_index - 1).copied();
-
-
-        next_sample
-    }
-
-    fn set_stream(&mut self, stream: cpal::Stream) {
-        // TODO: Should not have to put the whole original samples here since
-        // it is reset when applying the modifiers
-        self.samples_with_modifiers = Some(Mutex::new(self.original_samples.clone()));
-        self.apply_modifiers();
-
-        self.stream = Some(stream);
-    }
-
     fn start(&self) {
         let stream = match &self.stream {
             Some(s) => s,
             None => return,
         };
 
-        stream.play();
+        stream.start();
     }
 
     fn stop(&self) {
@@ -151,6 +128,17 @@ impl<T: Sample> SamplesPlayerTrait<T> for SamplesPlayer<T> {
             None => return,
         };
 
-        stream.pause();
+        stream.stop();
+    }
+
+    fn play_on_device(&mut self, device: Device) {
+        self.apply_modifiers();
+
+        let stream = device.create_stream(&self.original_samples.metadata,
+            self.samples_with_modifiers
+                .as_ref()
+                .expect("no samples with modifiers")
+                .clone());
+        self.set_stream(stream);
     }
 }

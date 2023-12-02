@@ -1,8 +1,6 @@
-use cpal;
+use cpal::{self, Sample as CpalSampleTrait};
 
 use crate::{traits::AudioMetadataTrait, audio_codecs::AudioCodec};
-
-use crate::cpal_abstraction::{Device, Stream};
 
 use super::{SampleType, Sample};
 
@@ -22,25 +20,36 @@ impl<T: Sample> Samples<T> {
     }
 }
 
-// FIXME: Replace with SamplePlayerTrait
 /// This is used to be able to store Samples Struct of multiple generic type in Box
-//pub trait SamplesTrait {
-//    /// Consumes the samples and plays on the specified device
-//    fn play_on_device(&self, device: Device) -> Stream;
-//
-//    fn metadata(&self) -> Box<dyn AudioMetadataTrait>;
-//}
-//
-//impl<T: Sample> SamplesTrait for Samples<T> {
-//    fn play_on_device(&self, device: Device) -> Stream {
-//        // TODO: Cloneing here is not a good idea
-//        device.play(self.clone())
-//    }
-//
-//    fn metadata(&self) -> Box<dyn AudioMetadataTrait> {
-//        Box::new(self.metadata.clone())
-//    }
-//}
+pub trait SamplesTrait {
+    /// Consumes the samples and plays on the specified device
+    fn into_f32_samples(&self) -> Samples<f32>;
+
+    fn metadata(&self) -> Box<dyn AudioMetadataTrait>;
+}
+
+impl<T: Sample> SamplesTrait for Samples<T>
+where f32: cpal::FromSample<T>  {
+    fn into_f32_samples(&self) -> Samples<f32> {
+        let f32_samples = self.samples.clone().into_iter().map(|s| s.to_sample()).collect();
+
+        Samples::new(f32_samples, self.metadata.clone())  
+    }
+
+    fn metadata(&self) -> Box<dyn AudioMetadataTrait> {
+        Box::new(self.metadata.clone())
+    }
+}
+
+impl Samples<f32> {
+    pub fn into_t_samples<T: Sample + cpal::FromSample<f32>>(&self) -> Samples<T> {
+        let samples = self.samples.clone().into_iter()
+            .map(|s| s.to_sample())
+            .collect();
+
+        Samples::new(samples, self.metadata.clone())
+    }
+}
 
 /// Metadata about audio samples
 #[derive(Debug, Clone)]

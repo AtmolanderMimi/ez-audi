@@ -155,11 +155,13 @@
 //    }
 //}
 
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::{Mutex, Arc}};
 
 use cpal::{self, traits::{HostTrait, DeviceTrait}, Host};
 
-use super::{config, Samples, Sample, Stream, SamplesPlayer, SamplesPlayerTrait};
+use crate::traits::AudioMetadataTrait;
+
+use super::{config, Samples, Sample, Stream, SamplesPlayerTrait};
 
 pub struct Device {
     device: cpal::Device,
@@ -172,34 +174,37 @@ impl Device {
         }
     }
 
-    pub fn play_default_output<T: Sample>(player: &impl SamplesPlayerTrait<T>) -> Stream {
+    pub fn play_default_output<T: Sample>(player: &mut impl SamplesPlayerTrait) {
         let device = Device::default_output()
             .expect("no default output device on the default host");
     
-        device.play(player)
+        player.play_on_device(Device::default_output().expect("no default output found"));
     }
 
 
-    pub fn create_stream<T: Sample>(&self, player: &impl SamplesPlayerTrait<T>) -> Stream {
+    pub fn create_stream<T: Sample>(&self, metadata: &impl AudioMetadataTrait, samples: Arc<Mutex<Samples<T>>>) -> Stream {
         let config_range = self.inner_device().supported_output_configs()
             .expect("default output device of default host has no output configs");
 
         let metadata = config::new_supported_stream_config(
-            player.metadata().channels() as u16,
-            player.metadata().sample_rate(),
-            player.metadata().sample_type().unwrap_or(todo!("make error here")).into(),
+            metadata.channels() as u16,
+            metadata.sample_rate(),
+            metadata.sample_type().unwrap_or_else(|| todo!("make error here")).into(),
         );
         let config = config::best_fitting_stream_config(&metadata, config_range)
             .expect("default output device of default host has no matching output configs");
 
-        let sample_rate = cpal::SampleRate(player.metadata().sample_rate());
+        let sample_rate = metadata.sample_rate();
         let config = config.with_sample_rate(sample_rate);
 
-        let 
+        let mut index = 0;
         let data_callback = move |samples_out: &mut [T], _info: &_| {
+            index += 1;
+            // TODO: This should maybe not crash
+            let samples = samples.lock().expect("samples are inaccessible to audio stream");
             for sample in samples_out {
-                *sample = match player.next_sample() {
-                    Some(s) => s,
+                *sample = match samples.samples.get(index) {
+                    Some(s) => *s,
                     None => T::EQUILIBRIUM,
                 }
             }
@@ -219,11 +224,8 @@ impl Device {
         stream.into()
     }
 
-    pub fn play<T: Sample>(&self, player: &impl SamplesPlayerTrait<T>) -> Stream {
-        let stream = self.create_stream(player);
-        stream.start();
-
-        stream.into()
+    pub fn play<T: Sample>(self, player: &mut impl SamplesPlayerTrait) {
+        player.play_on_device(self);
     }
 
     /// Returns all devices from all hosts
