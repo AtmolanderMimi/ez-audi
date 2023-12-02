@@ -5,7 +5,9 @@ mod errors;
 mod traits;
 
 pub use errors::Error;
-pub use cpal_abstraction::{Device, Stream};
+pub use cpal_abstraction::{Device, Stream, SamplesPlayer};
+
+pub use cpal_abstraction::samples::modifiers;
 
 pub mod audio_types {
     use crate::wav;
@@ -24,4 +26,6 @@ pub mod public_traits {
     use crate::traits;
     pub use traits::AudioFileTrait;
     pub use crate::audio_codecs::AudioCodecTrait;
+    use crate::cpal_abstraction;
+    pub use cpal_abstraction::{SamplesPlayerTrait, ModifierTrait};
 }

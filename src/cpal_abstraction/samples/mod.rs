@@ -4,5 +4,5 @@ mod samples;
 pub use samples::*;
 mod samples_player;
 pub use samples_player::*;
-mod modifiers;
-pub use modifiers::*;
+pub mod modifiers;
+pub use modifiers::ModifierTrait;

@@ -1,12 +1,13 @@
 use std::sync::{Mutex, MutexGuard, Arc};
 
+use samples::SamplesMetadata;
+
 use crate::{Device, traits::AudioMetadataTrait, cpal_abstraction};
 
-use super::{Sample, Samples, ModifierTrait, SamplesTrait};
+use super::{Sample, Samples, ModifierTrait, SamplesTrait, samples};
 
 /// Manages the applying of modifiers and the sending of samples to audio streams
 pub struct SamplesPlayer<T: Sample> {
-    sample_index: usize,
     original_samples: Samples<T>,
     modifiers: Vec<Box<dyn ModifierTrait>>,
     samples_with_modifiers: Option<Arc<Mutex<Samples<T>>>>,
@@ -17,7 +18,6 @@ impl<T: Sample> SamplesPlayer<T>
 where f32: cpal::FromSample<T> {
     pub fn new(samples: Samples<T>) -> SamplesPlayer<T> {
         Self {
-            sample_index: 0,
             original_samples: samples,
             modifiers: Vec::new(),
             samples_with_modifiers: None,
@@ -45,6 +45,7 @@ where f32: cpal::FromSample<T> {
         if let Some(mut guard) = mutex_guard_option {
             *guard = samples;
         } else {
+            // Creates a Arc if there is none yet
             drop(mutex_guard_option);
             self.samples_with_modifiers = Some(Arc::new(Mutex::new(samples)))
         }
@@ -63,7 +64,6 @@ where f32: cpal::FromSample<T> {
     fn set_stream(&mut self, stream: cpal_abstraction::Stream) {
         // TODO: Should not have to put the whole original samples here since
         // it is reset when applying the modifiers
-        self.samples_with_modifiers = Some(Arc::new(Mutex::new(self.original_samples.clone())));
         self.apply_modifiers();
 
         self.stream = Some(stream);
@@ -87,11 +87,10 @@ pub trait SamplesPlayerTrait {
     fn stop(&self);
 
     /// Starts playing on a device
-    fn play_on_device(&mut self, device: Device) {
-    }
+    fn play_on_device(&mut self, _device: Device) {}
 
     fn play_on_default(&mut self) {
-        todo!("Here")
+        self.play_on_device(Device::default_output().expect("no default output"))
     }
 }
 
@@ -134,11 +133,13 @@ where f32: cpal::FromSample<T> {
     fn play_on_device(&mut self, device: Device) {
         self.apply_modifiers();
 
+        let samples_arc = self.samples_with_modifiers
+        .as_ref()
+        .expect("no samples with modifiers");
+        let samples_arc = Arc::clone(samples_arc);
+
         let stream = device.create_stream(&self.original_samples.metadata,
-            self.samples_with_modifiers
-                .as_ref()
-                .expect("no samples with modifiers")
-                .clone());
+            samples_arc);
         self.set_stream(stream);
     }
 }

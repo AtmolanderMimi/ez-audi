@@ -10,7 +10,7 @@ pub trait ModifierTrait {
 }
 
 /// Multiples the amplitude by the f32 value
-pub struct Volume(f32);
+pub struct Volume(pub f32);
 
 impl ModifierTrait for Volume {
     fn modify(&self, samples: Samples<f32>) -> Samples<f32> {
