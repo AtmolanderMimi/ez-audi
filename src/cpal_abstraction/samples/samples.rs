@@ -2,7 +2,7 @@ use cpal::{self, Sample as CpalSampleTrait};
 
 use crate::{traits::AudioMetadataTrait, audio_codecs::AudioCodec};
 
-use super::{SampleType, Sample};
+use super::{SampleType, Sample, IntermediateSampleType};
 
 #[derive(Debug, Clone)]
 /// A sample container of LPcm samples ready to be send to audio streams
@@ -23,14 +23,14 @@ impl<T: Sample> Samples<T> {
 /// This is used to be able to store Samples Struct of multiple generic type in Box
 pub trait SamplesTrait {
     /// Consumes the samples and plays on the specified device
-    fn into_f32_samples(&self) -> Samples<f32>;
+    fn into_generic_representation_samples(&self) -> Samples<IntermediateSampleType>;
 
     fn metadata(&self) -> Box<dyn AudioMetadataTrait>;
 }
 
 impl<T: Sample> SamplesTrait for Samples<T>
-where f32: cpal::FromSample<T>  {
-    fn into_f32_samples(&self) -> Samples<f32> {
+where IntermediateSampleType: cpal::FromSample<T>  {
+    fn into_generic_representation_samples(&self) -> Samples<IntermediateSampleType> {
         let f32_samples = self.samples.clone().into_iter().map(|s| s.to_sample()).collect();
 
         Samples::new(f32_samples, self.metadata.clone())  
@@ -41,8 +41,8 @@ where f32: cpal::FromSample<T>  {
     }
 }
 
-impl Samples<f32> {
-    pub fn into_t_samples<T: Sample + cpal::FromSample<f32>>(&self) -> Samples<T> {
+impl Samples<IntermediateSampleType> {
+    pub fn into_t_samples<T: Sample + cpal::FromSample<IntermediateSampleType>>(&self) -> Samples<T> {
         let samples = self.samples.clone().into_iter()
             .map(|s| s.to_sample())
             .collect();

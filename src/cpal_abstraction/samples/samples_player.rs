@@ -2,7 +2,7 @@ use std::sync::{Mutex, MutexGuard, Arc};
 
 use crate::{Device, traits::AudioMetadataTrait, cpal_abstraction};
 
-use super::{Sample, Samples, ModifierTrait, SamplesTrait};
+use super::{Sample, Samples, ModifierTrait, SamplesTrait, IntermediateSampleType};
 
 /// Manages the applying of modifiers and the sending of samples to audio streams
 pub struct SamplesPlayer<T: Sample> {
@@ -13,7 +13,7 @@ pub struct SamplesPlayer<T: Sample> {
 }
 
 impl<T: Sample> SamplesPlayer<T>
-where f32: cpal::FromSample<T> {
+where IntermediateSampleType: cpal::FromSample<T> {
     pub fn new(samples: Samples<T>) -> SamplesPlayer<T> {
         Self {
             original_samples: samples,
@@ -51,7 +51,7 @@ where f32: cpal::FromSample<T> {
 
     // Applies all the modifiers
     fn apply_modifiers(&mut self) {
-        let mut modified_samples = self.original_samples.clone().into_f32_samples();
+        let mut modified_samples = self.original_samples.clone().into_generic_representation_samples();
         for modifier in &self.modifiers {
             modified_samples = modifier.modify(modified_samples);
         }
@@ -93,7 +93,7 @@ pub trait SamplesPlayerTrait {
 }
 
 impl<T: Sample> SamplesPlayerTrait for SamplesPlayer<T>
-where f32: cpal::FromSample<T> {
+where IntermediateSampleType: cpal::FromSample<T> {
     fn metadata(&self) -> Box<dyn AudioMetadataTrait> {
         Box::new(self.original_samples.metadata.clone())
     }

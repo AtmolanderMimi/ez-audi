@@ -8,7 +8,7 @@ fn main() {
     //println!("Sample type sample type sample(????): {:?}", samples.metadata().sample_type());
 
     let mut player = wav_audio.play_on_default_output().unwrap();
-    player.add_modifier(Box::new(ez_audi::modifiers::Volume(1.5)));
+    player.add_modifier(Box::new(ez_audi::modifiers::Volume(1.0)));
 
     std::thread::sleep(std::time::Duration::from_secs(1));
 

@@ -2,10 +2,13 @@ use std::fmt::Debug;
 
 use cpal;
 
-pub trait Sample: cpal::SizedSample + cpal::FromSample<f32> + std::marker::Send + 'static + Debug {}
+/// Type that the samples with be converted to in order to do stuff such as apply modifiers
+pub type IntermediateSampleType = f64;
+/// Trait implemented on all supported samples types
+pub trait Sample: cpal::SizedSample + cpal::FromSample<IntermediateSampleType> + std::marker::Send + 'static + Debug {}
 
-impl<T: cpal::SizedSample + cpal::FromSample<f32> + std::marker::Send + 'static + Debug> Sample for T
-where f32: cpal::FromSample<T> {}
+impl<T: cpal::SizedSample + cpal::FromSample<IntermediateSampleType> + std::marker::Send + 'static + Debug> Sample for T
+where IntermediateSampleType: cpal::FromSample<IntermediateSampleType> {}
 
 #[derive(Debug, Clone)]
 pub enum SampleType {
