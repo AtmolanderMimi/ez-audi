@@ -165,20 +165,6 @@ impl WavAudio {
         Ok(audio)
     }
 
-    pub fn make_player(&self) -> Error<Box<dyn SamplesPlayerTrait>> {
-        match self.metadata.sample_type() {
-            SampleType::U8 => {
-                let samples = self.get_samples_u8()?;
-                return Ok(Box::new(SamplesPlayer::new(samples)));
-            },
-            SampleType::I16 => {
-                let samples = self.get_samples_i16()?;
-                return Ok(Box::new(SamplesPlayer::new(samples)));
-            },
-            _ => todo!("unsupported")
-        }
-    }
-
     fn get_samples_bytes(&self) -> Error<Vec<u8>> {
         let f = File::open(&self.file_path)?;
         let mut reader = BufReader::new(f);
@@ -209,6 +195,34 @@ impl WavAudio {
 }
 
 impl AudioFileTrait for WavAudio {
+    fn get_samples(&self) -> Error<Box<dyn crate::cpal_abstraction::SamplesTrait>> {
+        match self.metadata.sample_type() {
+            SampleType::U8 => {
+                let samples = self.get_samples_u8()?;
+                return Ok(Box::new(samples));
+            },
+            SampleType::I16 => {
+                let samples = self.get_samples_i16()?;
+                return Ok(Box::new(samples));
+            },
+            _ => todo!("unsupported")
+        }
+    }
+
+    fn make_player(&self) -> Error<Box<dyn SamplesPlayerTrait>> {
+        match self.metadata.sample_type() {
+            SampleType::U8 => {
+                let samples = self.get_samples_u8()?;
+                return Ok(Box::new(SamplesPlayer::new(samples)));
+            },
+            SampleType::I16 => {
+                let samples = self.get_samples_i16()?;
+                return Ok(Box::new(SamplesPlayer::new(samples)));
+            },
+            _ => todo!("unsupported")
+        }
+    }
+
     fn play(&self, device: crate::cpal_abstraction::Device) -> Error<Box<dyn SamplesPlayerTrait>> {
         let mut player = self.make_player()?;
         player.play_on_device(device)?;
