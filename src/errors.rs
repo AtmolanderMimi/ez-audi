@@ -7,7 +7,8 @@ pub enum PlayError {
     TimeOutOfBounds,
     FileNotAccessible(io::Error),
     WrongFileType,
-    DeviceDoesNotSupportAudioSettings,
+    DeviceIoError(String, Option<Box<dyn error::Error + 'static>>),
+    DeviceDoesNotSupportAudioSettings(String, Option<Box<dyn error::Error + 'static>>),
     DeviceDoesNotExist{ name: String },
     Unsupported(String),
 }
@@ -19,7 +20,8 @@ impl Display for PlayError {
             Self::FileNotAccessible(_) => f.write_str("there was an error while trying to access the file"),
             Self::WrongFileType => f.write_str("file was of the wrong file type"),
             Self::DeviceDoesNotExist{ name: n } => f.write_str(&format!("the device '{n}' does not exist")),
-            Self::DeviceDoesNotSupportAudioSettings => f.write_str("the device does not support the settings of the audio file"),
+            Self::DeviceIoError(c, _) => f.write_str(&format!("the device had an issue with io because {c}")),
+            Self::DeviceDoesNotSupportAudioSettings(c, _) => f.write_str(&format!("the device had an issue with config because {c}")),
             Self::Unsupported(e) => f.write_str(&format!("ez_audi does not support '{}'", e)),
         }
     }
@@ -32,7 +34,18 @@ impl error::Error for PlayError {
             Self::FileNotAccessible(e) => Some(e),
             Self::WrongFileType => None,
             Self::DeviceDoesNotExist{ .. } => None,
-            Self::DeviceDoesNotSupportAudioSettings => None,
+            Self::DeviceIoError(_, s) => {
+                match s {
+                    Some(s) => Some(&**s.clone()),
+                    None => None,
+                }
+            },
+            Self::DeviceDoesNotSupportAudioSettings(_, s) => {
+                match s {
+                    Some(s) => Some(&**s.clone()),
+                    None => None,
+                }
+            },
             Self::Unsupported(_) => None,
         }
     }

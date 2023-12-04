@@ -1,6 +1,6 @@
 use std::sync::{Mutex, MutexGuard, Arc};
 
-use crate::{Device, traits::AudioMetadataTrait, cpal_abstraction};
+use crate::{Device, traits::AudioMetadataTrait, cpal_abstraction, Error, errors::PlayError};
 
 use super::{Sample, Samples, ModifierTrait, SamplesTrait, IntermediateSampleType};
 
@@ -85,10 +85,15 @@ pub trait SamplesPlayerTrait {
     fn stop(&self);
 
     /// Starts playing on a device
-    fn play_on_device(&mut self, _device: Device) {}
+    fn play_on_device(&mut self, _device: Device) -> Error<()>;
 
-    fn play_on_default(&mut self) {
-        self.play_on_device(Device::default_output().expect("no default output"))
+    fn play_on_default(&mut self) -> Error<()> {
+        let default_output = match Device::default_output() {
+            Some(o) => o,
+            None => return Err(PlayError::DeviceDoesNotExist { name : "default".to_string() }),
+        };
+
+        self.play_on_device(default_output)
     }
 }
 
@@ -128,16 +133,20 @@ where IntermediateSampleType: cpal::FromSample<T> {
         stream.stop();
     }
 
-    fn play_on_device(&mut self, device: Device) {
+    fn play_on_device(&mut self, device: Device) -> Error<()> {
+        // Makes sure that there is a Sample in self.samples_with_modifiers
         self.apply_modifiers();
 
         let samples_arc = self.samples_with_modifiers
-        .as_ref()
-        .expect("no samples with modifiers");
+            .as_ref()
+            .expect("no samples with modifiers");
         let samples_arc = Arc::clone(samples_arc);
 
         let stream = device.create_stream(&self.original_samples.metadata,
-            samples_arc);
+            samples_arc)?;
+
         self.set_stream(stream);
+
+        Ok(())
     }
 }
