@@ -19,13 +19,13 @@ pub mod audio_types {
 
 pub mod samples {
     use crate::cpal_abstraction;
-    pub use cpal_abstraction::{Sample, SampleType};
+    pub use cpal_abstraction::{Sample, IntermediateSampleType, Samples, SampleType};
 }
 
 pub mod public_traits {
     use crate::traits;
-    pub use traits::AudioFileTrait;
+    pub use traits::{AudioFileTrait, AudioMetadataTrait};
     pub use crate::audio_codecs::AudioCodecTrait;
     use crate::cpal_abstraction;
-    pub use cpal_abstraction::{SamplesPlayerTrait, ModifierTrait};
+    pub use cpal_abstraction::{SamplesPlayerTrait, ModifierTrait, SamplesTrait};
 }
