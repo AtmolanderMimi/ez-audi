@@ -209,9 +209,9 @@ impl WavAudio {
 }
 
 impl AudioFileTrait for WavAudio {
-    fn play(&self, device: crate::cpal_abstraction::Device) -> Result<Box<dyn SamplesPlayerTrait>, PlayError> {
+    fn play(&self, device: crate::cpal_abstraction::Device) -> Error<Box<dyn SamplesPlayerTrait>> {
         let mut player = self.make_player()?;
-        player.play_on_device(device);
+        player.play_on_device(device)?;
 
         Ok(player)
     }

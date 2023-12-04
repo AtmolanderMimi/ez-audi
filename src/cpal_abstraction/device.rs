@@ -87,8 +87,8 @@ impl Device {
         Ok(stream.into())
     }
 
-    pub fn play<T: Sample>(self, player: &mut impl SamplesPlayerTrait) {
-        player.play_on_device(self);
+    pub fn play<T: Sample>(self, player: &mut impl SamplesPlayerTrait) -> Error<()> {
+        player.play_on_device(self)
     }
 
     /// Returns all devices from all hosts
