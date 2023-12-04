@@ -28,6 +28,7 @@ impl ModifierTrait for Volume {
     }
 }
 
+// TODO: God have mercy for I have sinned
 /// Adds channels or flattens existing ones into the desired amount, also changes the metadata to match
 pub fn into_n_channels(samples: Samples<IntermediateSampleType>, nb_channels: u16) -> Samples<IntermediateSampleType> {
     const OLD_CHANNEL_LENGHT: f64 = 1.0;
@@ -76,8 +77,8 @@ pub fn into_n_channels(samples: Samples<IntermediateSampleType>, nb_channels: u1
                 .collect::<Vec<(bool, usize)>>();
 
         let origin_channels_index = truth_map.into_iter()
-            .filter(|(c, i)| *c == true)
-            .map(|(c, i)| i)
+            .filter(|(c, _i)| *c == true)
+            .map(|(_c, i)| i)
             .collect::<Vec<usize>>();
 
         let origin_channels = origin_channels_index.iter().count();

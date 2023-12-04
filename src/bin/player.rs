@@ -1,5 +1,4 @@
 use ez_audi::audio_types::WavAudio;
-use ez_audi::samples::Samples;
 use ez_audi::{public_traits::*, SamplesPlayer};
 
 fn main() {
