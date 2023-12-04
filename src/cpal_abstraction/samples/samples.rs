@@ -2,7 +2,7 @@ use cpal::{self, Sample as CpalSampleTrait};
 
 use crate::{traits::AudioMetadataTrait, audio_codecs::AudioCodec};
 
-use super::{SampleType, Sample, IntermediateSampleType, get_real_sample_type::GetRealSampleType};
+use super::{SampleType, Sample, IntermediateSampleType};
 
 #[derive(Debug, Clone)]
 /// A sample container of LPcm samples ready to be send to audio streams
@@ -18,19 +18,28 @@ impl<T: Sample> Samples<T> {
             metadata,
         }
     }
+
+    fn update_sample_type(&mut self) {
+        self.metadata.sample_type = match self.samples.get(0) {
+            Some(t) => (*t).into(),
+            None => self.metadata.sample_type.clone(),
+        }
+    }
 }
 
 impl Samples<IntermediateSampleType> {
     /// Makes a clone of the samples in the desired sample type
     pub fn into_t_samples<T: Sample + cpal::FromSample<IntermediateSampleType>>(&self) -> Samples<T> {
         let samples = self.samples.clone().into_iter()
-            .map(|s| s.to_sample())
+            .map(|s| s.to_sample::<T>())
             .collect();
 
-        let mut metadata = self.metadata.clone();
-        // TODO: Figure out why this trait is implemented on the generic Samples<T>
-        metadata.sample_type = self.get_real_sample_type().expect("we do not support these kind of weird samples");
-        Samples::new(samples, metadata)
+        let metadata = self.metadata.clone();
+        let mut samples = Samples::new(samples, metadata);
+        
+        samples.update_sample_type();
+
+        samples
     }
 }
 
@@ -47,10 +56,10 @@ where IntermediateSampleType: cpal::FromSample<T> {
     fn into_generic_representation_samples(&self) -> Samples<IntermediateSampleType> {
         let f32_samples = self.samples.clone().into_iter().map(|s| s.to_sample()).collect();
 
-        let mut metadata = self.metadata.clone();
-        metadata.sample_type = SampleType::F64; //TODO: Find a prettier way to do this
+        let mut samples = Samples::new(f32_samples, self.metadata.clone());
+        samples.update_sample_type();
 
-        Samples::new(f32_samples, metadata)  
+        samples
     }
 
     fn metadata(&self) -> Box<dyn AudioMetadataTrait> {

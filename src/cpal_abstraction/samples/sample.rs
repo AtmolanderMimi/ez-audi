@@ -2,12 +2,14 @@ use std::fmt::Debug;
 
 use cpal;
 
+use super::Samples;
+
 /// Type that the samples with be converted to in order to do stuff such as apply modifiers
 pub type IntermediateSampleType = f64;
 /// Trait implemented on all supported samples types
-pub trait Sample: cpal::SizedSample + cpal::FromSample<IntermediateSampleType> + std::marker::Send + 'static + Debug {}
+pub trait Sample: cpal::SizedSample + cpal::FromSample<IntermediateSampleType> + std::marker::Send + 'static + Into<SampleType> + Debug {}
 
-impl<T: cpal::SizedSample + cpal::FromSample<IntermediateSampleType> + std::marker::Send + 'static + Debug> Sample for T
+impl<T: cpal::SizedSample + cpal::FromSample<IntermediateSampleType> + std::marker::Send + 'static + Into<SampleType> + Debug> Sample for T
 where IntermediateSampleType: cpal::FromSample<IntermediateSampleType> {}
 
 #[derive(Debug, Clone)]
@@ -40,5 +42,127 @@ impl From<SampleType> for cpal::SampleFormat {
             SampleType::F32 => cpal::SampleFormat::F32,
             SampleType::F64 => cpal::SampleFormat::F64,
         }
+    }
+}
+
+impl From<u8> for SampleType {
+    fn from(value: u8) -> Self {
+        SampleType::U8
+    }
+}
+
+impl From<u16> for SampleType {
+    fn from(value: u16) -> Self {
+        SampleType::U16
+    }
+}
+
+impl From<u32> for SampleType {
+    fn from(value: u32) -> Self {
+        SampleType::U32
+    }
+}
+
+impl From<u64> for SampleType {
+    fn from(value: u64) -> Self {
+        SampleType::U64
+    }
+}
+
+impl From<i8> for SampleType {
+    fn from(value: i8) -> Self {
+        SampleType::I8
+    }
+}
+
+impl From<i16> for SampleType {
+    fn from(value: i16) -> Self {
+        SampleType::I16
+    }
+}
+
+impl From<i32> for SampleType {
+    fn from(value: i32) -> Self {
+        SampleType::I32
+    }
+}
+
+impl From<i64> for SampleType {
+    fn from(value: i64) -> Self {
+        SampleType::I64
+    }
+}
+
+impl From<f32> for SampleType {
+    fn from(value: f32) -> Self {
+        SampleType::F32
+    }
+}
+
+impl From<f64> for SampleType {
+    fn from(value: f64) -> Self {
+        SampleType::F64
+    }
+}
+
+// Split
+
+impl From<&Samples<u8>> for SampleType {
+    fn from(value: &Samples<u8>) -> Self {
+        SampleType::U8
+    }
+}
+
+impl From<&Samples<u16>> for SampleType {
+    fn from(value: &Samples<u16>) -> Self {
+        SampleType::U16
+    }
+}
+
+impl From<&Samples<u32>> for SampleType {
+    fn from(value: &Samples<u32>) -> Self {
+        SampleType::U32
+    }
+}
+
+impl From<&Samples<u64>> for SampleType {
+    fn from(value: &Samples<u64>) -> Self {
+        SampleType::U64
+    }
+}
+
+impl From<&Samples<i8>> for SampleType {
+    fn from(value: &Samples<i8>) -> Self {
+        SampleType::I8
+    }
+}
+
+impl From<&Samples<i16>> for SampleType {
+    fn from(value: &Samples<i16>) -> Self {
+        SampleType::I16
+    }
+}
+
+impl From<&Samples<i32>> for SampleType {
+    fn from(value: &Samples<i32>) -> Self {
+        SampleType::I32
+    }
+}
+
+impl From<&Samples<i64>> for SampleType {
+    fn from(value: &Samples<i64>) -> Self {
+        SampleType::I64
+    }
+}
+
+impl From<&Samples<f32>> for SampleType {
+    fn from(value: &Samples<f32>) -> Self {
+        SampleType::F32
+    }
+}
+
+impl From<&Samples<f64>> for SampleType {
+    fn from(value: &Samples<f64>) -> Self {
+        SampleType::F64
     }
 }
