@@ -28,7 +28,8 @@ impl ModifierTrait for Volume {
     }
 }
 
-// TODO: God have mercy for I have sinned
+// TODO: God have mercy for I have sinned, ono I have to debug it didn't work on the first try :((((
+// It works now, still an afront to god though
 /// Adds channels or flattens existing ones into the desired amount, also changes the metadata to match
 pub fn into_n_channels(samples: Samples<IntermediateSampleType>, nb_channels: u16) -> Samples<IntermediateSampleType> {
     const OLD_CHANNEL_LENGHT: f64 = 1.0;
@@ -53,7 +54,7 @@ pub fn into_n_channels(samples: Samples<IntermediateSampleType>, nb_channels: u1
     }
 
     let mut new_channels = Vec::new();
-    for i in 0..metadata.channels {
+    for i in 0..nb_channels {
         let start = (i as f64 * new_channel_lenght) + OFFSET;
         let end = (new_channel_lenght + start) - OFFSET;
         new_channels.push(start..end)
@@ -86,9 +87,10 @@ pub fn into_n_channels(samples: Samples<IntermediateSampleType>, nb_channels: u1
         new_channels_structs.push(Channel { factor_by_channel: 1.0 / origin_channels as f64, origin_channels_index });
     }
 
-    for c in &new_channels_structs {
-        println!("{:?}", c)
-    }
+    //// Debug info
+    //for c in &new_channels_structs {
+    //    println!("{:?}", c)
+    //}
 
     // Joins the new channels
     let seperated_channels = seperate_channels(samples);
