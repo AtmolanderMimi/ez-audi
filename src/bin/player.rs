@@ -1,36 +1,44 @@
 use ez_audi::audio_types::WavAudio;
-use ez_audi::{public_traits::*, SamplesPlayer};
+use ez_audi::{public_traits::*, SamplesPlayer, modifiers};
 
 fn main() {
-    let wav_audio = WavAudio::new("test_assets/i16-stereo-lpcm.wav").unwrap();
+    const FILE_NAME: &str = "test_assets/i16-stereo-lpcm.wav";
+    let wav_audio = WavAudio::new(FILE_NAME).unwrap();
     println!("Sample type: {:?}", wav_audio.metadata().sample_type());
+
     let samples = wav_audio.get_samples().unwrap();
-    println!("Sample type sample type sample(????): {:?}", samples.metadata().sample_type());
 
-    let gen_samples = samples.into_generic_representation_samples();
-    let flat_gen_samples = ez_audi::modifiers::into_n_channels(gen_samples, 1);
+    println!("Playing strait from WavAudio...");
+    let mut player = wav_audio.play_on_default_output().unwrap();
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
-    let i16_samples = flat_gen_samples.into_t_samples::<i16>();
-    println!("{:?}", i16_samples.metadata);
+    println!("Adding loop modifier for convinience");
+    player.add_modifier(Box::new(modifiers::Loop(100)));
+
+    println!("Stopping for 2 sec");
+    player.stop();
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    println!("Playing with VOLUME modifier at 0.2");
+    player.start();
+    player.add_modifier(Box::new(modifiers::Volume(0.2)));
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    println!("Clearing modifiers");
+    player.clear_modifiers();
+    std::thread::sleep(std::time::Duration::from_secs(2));
     
-    let mut gen_player = SamplesPlayer::new(i16_samples);
-    gen_player.play_on_default().unwrap();
+    println!("Playing from IntermediateRepresentation samples into i16");
+    let gen_samples = samples.into_generic_representation_samples();
+    let i16_samples = gen_samples.into_t_samples::<i16>();
+    let mut player = SamplesPlayer::new(i16_samples);
+    player.play_on_default().unwrap();
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
-    //let mut player = wav_audio.play_on_default_output().unwrap();
-    //player.add_modifier(Box::new(ez_audi::modifiers::Volume(1.0)));
-//
-    //std::thread::sleep(std::time::Duration::from_secs(1));
-//
-    //player.stop();
-//
-    //std::thread::sleep(std::time::Duration::from_secs(1));
-//
-    //player.start();
-//
-    //std::thread::sleep(std::time::Duration::from_secs(1));
-//
-    //player.clear_modifiers();
-    //player.add_modifier(Box::new(ez_audi::modifiers::Volume(0.5)));
-
-    std::thread::sleep(std::time::Duration::from_secs(5));
+    println!("Playing from FLATTENED (1 channel) samples");
+    let gen_samples = samples.into_generic_representation_samples();
+    let flattened_samples = modifiers::into_n_channels(gen_samples, 1);
+    let mut player = SamplesPlayer::new(flattened_samples.into_t_samples::<i16>());
+    player.play_on_default().unwrap();
+    std::thread::sleep(std::time::Duration::from_secs(2));
 }

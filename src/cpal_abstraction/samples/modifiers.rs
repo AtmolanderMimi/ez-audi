@@ -28,6 +28,22 @@ impl ModifierTrait for Volume {
     }
 }
 
+pub struct Loop(pub u32);
+
+impl ModifierTrait for Loop {
+    fn modify(&self, mut samples: Samples<IntermediateSampleType>) -> Samples<IntermediateSampleType> {
+        let inner_samples = samples.samples.clone();
+
+        for _ in 0..self.0 {
+            // Append consumes so I will copy before
+            let mut cloned_inner_samples = inner_samples.clone();
+            samples.samples.append(&mut cloned_inner_samples)
+        }
+
+        samples
+    }
+}
+
 // TODO: God have mercy for I have sinned, ono I have to debug it didn't work on the first try :((((
 // It works now, still an afront to god though
 /// Adds channels or flattens existing ones into the desired amount, also changes the metadata to match
