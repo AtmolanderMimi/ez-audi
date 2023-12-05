@@ -28,6 +28,12 @@ fn main() {
     player.clear_modifiers();
     std::thread::sleep(std::time::Duration::from_secs(2));
     
+    println!("Playing from IntermediateRepresentation samples (don't worry it is meant to error out)");
+    let gen_samples = samples.into_generic_representation_samples();
+    let mut player = SamplesPlayer::new(gen_samples);
+    println!("{}", player.play_on_default().unwrap_err());
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
     println!("Playing from IntermediateRepresentation samples into i16");
     let gen_samples = samples.into_generic_representation_samples();
     let i16_samples = gen_samples.into_t_samples::<i16>();

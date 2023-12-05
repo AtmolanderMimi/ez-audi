@@ -34,25 +34,9 @@ impl Device {
                 format!("the device had an issue fetching configs"), Some(Box::new(e))))
         };
 
-        let sample_type = match metadata.sample_type() {
-            Some(t) => t,
-            None => return  Err(PlayError::DeviceDoesNotSupportAudioSettings(
-                "the samples have no set sample type".to_string(), None)),
-        };
+        let config = config::find_fitting_stream_config(metadata, config_range)?;
 
-        let metadata = config::new_supported_stream_config(
-            metadata.channels() as u16,
-            metadata.sample_rate(),
-            sample_type.into(),
-        );
-
-        let config = match config::best_fitting_stream_config(&metadata, config_range) {
-            Some(c) => c,
-            None => return Err(PlayError::DeviceDoesNotSupportAudioSettings(
-                "the device has no config fitting the one required".to_string(), None))
-        };
-
-        let sample_rate = metadata.sample_rate();
+        let sample_rate = cpal::SampleRate(metadata.sample_rate());
         let config = config.with_sample_rate(sample_rate);
 
         let mut index = 0;
