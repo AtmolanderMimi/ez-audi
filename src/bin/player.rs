@@ -16,11 +16,11 @@ fn main() {
     player.add_modifier(Box::new(modifiers::Loop(100)));
 
     println!("Stopping for 2 sec");
-    player.stop();
+    player.stop().unwrap();
     std::thread::sleep(std::time::Duration::from_secs(2));
 
     println!("Playing with VOLUME modifier at 0.2");
-    player.start();
+    player.start().unwrap();
     player.add_modifier(Box::new(modifiers::Volume(0.2)));
     std::thread::sleep(std::time::Duration::from_secs(2));
 
