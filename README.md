@@ -27,3 +27,4 @@ std::thread::sleep(std::time::Duration::from_secs(2));
 ## What is left to do:
 * Pretty much everything, don't use this in any serious projects unless you enjoy relying on unstable, buggy code
 * The documentation is also very much lacking
+* The projet is **very much still in development** if you are not intersted now, please come back later
