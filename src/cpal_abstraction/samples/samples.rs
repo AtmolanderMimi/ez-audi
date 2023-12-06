@@ -12,6 +12,7 @@ pub struct Samples<T: Sample> {
 }
 
 impl<T: Sample> Samples<T> {
+    /// Creates a new Samples struct
     pub fn new(samples: Vec<T>, metadata: SamplesMetadata) -> Samples<T> {
         Samples {
             samples,
@@ -19,6 +20,7 @@ impl<T: Sample> Samples<T> {
         }
     }
 
+    /// Updates the sample in the metadata based on the real generic sample type
     fn update_sample_type(&mut self) {
         self.metadata.sample_type = match self.samples.get(0) {
             Some(t) => (*t).into(),

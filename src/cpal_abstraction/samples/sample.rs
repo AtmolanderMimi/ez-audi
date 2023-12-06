@@ -12,7 +12,7 @@ pub trait Sample: cpal::SizedSample + cpal::FromSample<IntermediateSampleType> +
 impl<T: cpal::SizedSample + cpal::FromSample<IntermediateSampleType> + std::marker::Send + 'static + Into<SampleType> + Debug> Sample for T
 where IntermediateSampleType: cpal::FromSample<IntermediateSampleType> {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SampleType {
     U8,
     U16,
@@ -45,6 +45,8 @@ impl From<SampleType> for cpal::SampleFormat {
     }
 }
 
+// TODO: This is stupid bruteforcing of the problem
+// There is probably a way to make a macro for this
 impl From<u8> for SampleType {
     fn from(_value: u8) -> Self {
         SampleType::U8

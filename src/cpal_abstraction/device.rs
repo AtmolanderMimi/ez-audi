@@ -18,6 +18,7 @@ impl Device {
         }
     }
 
+    /// Plays the samples on the default device of the default host
     pub fn play_default_output(player: &mut impl SamplesPlayerTrait) -> Error<()> {
         let device =  match Device::default_output() {
             Some(d) => d,
@@ -27,7 +28,7 @@ impl Device {
         player.play_on_device(device)
     }
 
-
+    /// Creates a stream that will play the metadata based on the metadata given
     pub fn create_stream<T: Sample>(&self, metadata: &impl AudioMetadataTrait, samples: Arc<Mutex<Samples<T>>>) -> Error<Stream> {
         let config_range = match self.inner_device().supported_output_configs() {
             Ok(c) => c,
@@ -72,6 +73,7 @@ impl Device {
         Ok(stream.into())
     }
 
+    /// Plays the samples in the SamplesPlayer on this device
     pub fn play<T: Sample>(self, player: &mut impl SamplesPlayerTrait) -> Error<()> {
         player.play_on_device(self)
     }
@@ -117,6 +119,7 @@ impl Device {
             .collect()
     }
 
+    /// Creates a new device from its device name
     pub fn new_from_name(device_name: &str) -> Option<Device> {
         let devices = Device::list_cpal_devices();
 
@@ -135,6 +138,7 @@ impl Device {
 }
 
 impl Device {
+    /// Returns the name of the device, if it can find one
     pub fn name(&self) -> Option<String> {
         match self.device.name() {
             Ok(n) => Some(n),

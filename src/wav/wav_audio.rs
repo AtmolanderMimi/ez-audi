@@ -26,8 +26,8 @@ fn read_until_fmt_block_and_pass(reader: &mut BufReader<File>) -> Result<(), Pla
 pub struct WavAudioMetadata {
     /// Where the file is
     file_path: String,
-    /// The way the data is read
-    audio_format: AudioCodec,
+    /// The codec in which the data is read
+    audio_codec: AudioCodec,
     /// Numbers of channels: mono = 1, Stereo = 2, etc...
     channels: u16,
     /// The number of samples per second (most likely)
@@ -49,8 +49,8 @@ impl WavAudioMetadata {
         let mut fmt_block = [0u8; FMT_BLOCK_SIZE];
         reader.read_exact(&mut fmt_block)?;
 
-        let audio_format_value = u16::from_le_bytes(fmt_block[4..6].try_into().unwrap());
-        let audio_format = match audio_format_value {
+        let audio_codec_value = u16::from_le_bytes(fmt_block[4..6].try_into().unwrap());
+        let audio_codec = match audio_codec_value {
             1 => AudioCodec::LPcm,
             _ => return Err(PlayError::Unsupported("audio format other than LPCM".to_string())),
         };
@@ -63,7 +63,7 @@ impl WavAudioMetadata {
 
         let metadata = WavAudioMetadata {
             file_path: path.to_string(),
-            audio_format,
+            audio_codec,
             sample_rate,
             channels,
             bits_per_sample,
@@ -78,8 +78,8 @@ impl WavAudioMetadata {
     }
 
     /// Returns the audio format
-    pub fn audio_format(&self) -> AudioCodec {
-        self.audio_format.clone()
+    pub fn audio_codec(&self) -> AudioCodec {
+        self.audio_codec.clone()
     }
 
     /// Returns the number of channels.
@@ -108,7 +108,7 @@ impl WavAudioMetadata {
         (self.channels * self.bits_per_sample) / 8
     }
 
-    /// Returns the sample format based on the bits per sample
+    /// Returns the sample type based on the bits per sample
     pub fn sample_type(&self) -> SampleType {
         match self.bits_per_sample {
             8 => SampleType::U8,
@@ -124,7 +124,7 @@ impl AudioMetadataTrait for WavAudioMetadata {
     }
 
     fn audio_codec(&self) -> AudioCodec {
-        self.audio_format()
+        self.audio_codec()
     }
 
     fn channels(&self) -> u32 {
@@ -150,6 +150,7 @@ pub struct WavAudio {
 }
 
 impl WavAudio {
+    /// Creates a new WavAudio and checks if the file is a valid WAVE file
     pub fn new(path: &str) -> Error<WavAudio> {
         if !utils::file_is_wav(path)? {
             return Err(PlayError::WrongFileType);
@@ -165,6 +166,7 @@ impl WavAudio {
         Ok(audio)
     }
 
+    /// Gets the samples byte by byte, used to pass into codecs
     fn get_samples_bytes(&self) -> Error<Vec<u8>> {
         let f = File::open(&self.file_path)?;
         let mut reader = BufReader::new(f);
@@ -181,16 +183,18 @@ impl WavAudio {
         return Ok(bytes)
     }
 
+    /// Gets the sample bytes and puts it through the u8 version of the decoder
     fn get_samples_u8(&self) -> Error<Samples<u8>> {
         let samples_bytes = self.get_samples_bytes()?;
 
-        self.audio_format.bytes_to_u8_samples(&samples_bytes, self.metadata.clone())
+        self.audio_codec.bytes_to_u8_samples(&samples_bytes, self.metadata.clone())
     }
 
+    /// Gets the sample bytess and puts it through the i16 version of the decoder
     fn get_samples_i16(&self) -> Error<Samples<i16>> {
         let samples_bytes = self.get_samples_bytes()?;
 
-        self.audio_format.bytes_to_i16_samples(&samples_bytes, self.metadata.clone())
+        self.audio_codec.bytes_to_i16_samples(&samples_bytes, self.metadata.clone())
     }
 }
 
@@ -205,7 +209,7 @@ impl AudioFileTrait for WavAudio {
                 let samples = self.get_samples_i16()?;
                 return Ok(Box::new(samples));
             },
-            _ => todo!("unsupported")
+            _ => return Err(PlayError::Unsupported(format!("unuported sample type {:?} for WAVE", self.sample_type())))
         }
     }
 
@@ -259,7 +263,7 @@ mod tests {
     fn metadata_is_valid() {
         let meta = WavAudioMetadata::new("test_assets/9000.wav").unwrap();
 
-        assert_eq!(meta.audio_format, AudioCodec::LPcm);
+        assert_eq!(meta.audio_codec, AudioCodec::LPcm);
 
         assert_eq!(meta.channels, 1);
 

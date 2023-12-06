@@ -49,7 +49,7 @@ where IntermediateSampleType: cpal::FromSample<T> {
         }
     }
 
-    // Applies all the modifiers
+    /// Applies all the modifiers
     fn apply_modifiers(&mut self) {
         let mut modified_samples = self.original_samples.clone().into_generic_representation_samples();
         for modifier in &self.modifiers {
@@ -68,6 +68,7 @@ where IntermediateSampleType: cpal::FromSample<T> {
     }
 }
 
+/// Trait that implements the functionality of the SamplesPlayer struct
 pub trait SamplesPlayerTrait {
     /// Returns the metadata of the samples
     fn metadata(&self) -> Box<dyn AudioMetadataTrait>;

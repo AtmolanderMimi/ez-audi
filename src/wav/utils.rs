@@ -1,7 +1,7 @@
 use std::io::{self, BufReader, Read};
 use std::fs::File;
 
-
+/// Allows to tell if a file is wav from its header
 pub fn file_is_wav(path: &str) -> Result<bool, io::Error> {
     let f = File::open(path)?;
     let mut reader = BufReader::new(f);

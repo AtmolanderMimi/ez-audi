@@ -91,7 +91,7 @@ impl From<cpal::PauseStreamError> for PlayError {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 /// Used in PlayError::DeviceDoesNotSupportAudioSettings
 pub enum AudioSettings {
     /// The type of the sample

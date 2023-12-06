@@ -42,14 +42,14 @@ pub use cpal_abstraction::{Device, Stream, SamplesPlayer};
 
 pub use cpal_abstraction::samples::modifiers;
 
-pub mod audio_types {
+pub mod audio_files {
     //! Functions and structs for dealing with audio files and their audio_codecs
 
     use crate::wav;
     pub use wav::WavAudio;
     pub use wav::file_is_wav;
     use crate::audio_codecs;
-    pub use audio_codecs::AudioCodec;
+    pub use audio_codecs::{AudioCodec, AudioCodecTrait};
 }
 
 pub mod samples {
@@ -61,7 +61,8 @@ pub mod samples {
 
 pub mod public_traits {
     //! A collection of most of the traits you need to work with this library,
-    //! note that the traits are also present in the modules where they are relevent 
+    //! note that the traits are also present in the modules where they are relevent
+
     use crate::traits;
     pub use traits::{AudioFileTrait, AudioMetadataTrait};
     pub use crate::audio_codecs::AudioCodecTrait;

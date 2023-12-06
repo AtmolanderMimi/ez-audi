@@ -4,7 +4,7 @@ use super::{Samples, IntermediateSampleType, Sample};
 
 /// A trait to implement on your sample modifiers (aka effects). 
 /// Note that the modifiers are made to act upon cpal samples, go see the Sample trait cpal provides.
-pub trait ModifierTrait {
+pub trait ModifierTrait: std::fmt::Debug {
     /// Modifies the samples it is used upon.
     /// # NOTES:
     /// * Take into consideration that audio with two channels will be arranged like so: 
@@ -17,6 +17,7 @@ pub trait ModifierTrait {
     fn modify(&self, samples: Samples<IntermediateSampleType>) -> Samples<IntermediateSampleType>;
 }
 
+#[derive(Debug, Clone)]
 /// Multiples the amplitude by the IntermediateSampleType (f64) value
 pub struct Volume(pub IntermediateSampleType);
 
@@ -30,6 +31,8 @@ impl ModifierTrait for Volume {
     }
 }
 
+#[derive(Debug, Clone)]
+/// Loops the samples by the u32 value specified
 pub struct Loop(pub u32);
 
 impl ModifierTrait for Loop {

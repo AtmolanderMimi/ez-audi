@@ -5,18 +5,22 @@ use crate::errors::{PlayError, Error};
 
 use crate::cpal_abstraction::{SamplesMetadata, Samples};
 
-/// The trait implemented on all audio decoders
+/// The trait implemented on all audio decoders, allows to decode bytes into LPcm samples
 pub trait AudioCodecTrait {
+    /// Transforms bytes into u8 samples
     fn bytes_to_u8_samples(&self, _bytes: &Vec<u8>, _metadata: impl Into<SamplesMetadata>) -> Error<Samples<u8>> {
         Err(PlayError::Unsupported("Bytes to u8 samples is not supported for the audio codec".to_string()))
     }
 
+    /// Transforms bytes into i16 samples
     fn bytes_to_i16_samples(&self, _bytes: &Vec<u8>, _metadata: impl Into<SamplesMetadata>) -> Error<Samples<i16>> {
         Err(PlayError::Unsupported("Bytes to i16 samples is not supported for the audio codec".to_string()))
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Enumeration of all the audio codecs, allows static dispatch on decoding rather than using
+/// a trait object
 pub enum AudioCodec {
     LPcm,
 }

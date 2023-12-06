@@ -3,6 +3,7 @@ use crate::audio_codecs::AudioCodec;
 use crate::cpal_abstraction::{Device, SampleType, SamplesPlayerTrait, SamplesTrait};
 use crate::errors::PlayError;
 
+/// Trait implemented on every AudioFile structs, that handles playback
 pub trait AudioFileTrait {
     /// Gets the file's samles
     fn get_samples(&self) -> Error<Box<dyn SamplesTrait>>;
@@ -13,6 +14,7 @@ pub trait AudioFileTrait {
     /// Starts playing the audio from a certain duration
     fn play(&self, device: Device) -> Error<Box<dyn SamplesPlayerTrait>>;
 
+    /// Plays on the default output of the default host
     fn play_on_default_output(&self) -> Error<Box<dyn SamplesPlayerTrait>> {
         let device = match Device::default_output() {
             Some(d) => d,
