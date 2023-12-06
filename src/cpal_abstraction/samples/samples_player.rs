@@ -79,14 +79,15 @@ pub trait SamplesPlayerTrait {
     fn clear_modifiers(&mut self);
 
     /// Starts/Continues the playing
-    fn start(&self);
+    fn start(&self) -> Error<()>;
 
     /// Stops the playing
-    fn stop(&self);
+    fn stop(&self) -> Error<()>;
 
     /// Starts playing on a device
     fn play_on_device(&mut self, _device: Device) -> Error<()>;
 
+    /// Starts playing on the default device of the default host
     fn play_on_default(&mut self) -> Error<()> {
         let default_output = match Device::default_output() {
             Some(o) => o,
@@ -115,22 +116,22 @@ where IntermediateSampleType: cpal::FromSample<T> {
         self.apply_modifiers();
     }
 
-    fn start(&self) {
+    fn start(&self) -> Error<()> {
         let stream = match &self.stream {
             Some(s) => s,
-            None => return,
+            None => return Ok(()), // No stream to start
         };
 
-        stream.start();
+        stream.start()
     }
 
-    fn stop(&self) {
+    fn stop(&self) -> Error<()> {
         let stream = match &self.stream {
             Some(s) => s,
-            None => return,
+            None => return Ok(()), // No stream to stop
         };
 
-        stream.stop();
+        stream.stop()
     }
 
     fn play_on_device(&mut self, device: Device) -> Error<()> {
