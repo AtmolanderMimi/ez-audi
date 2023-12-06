@@ -1,3 +1,5 @@
+//! Contains premade modifiers and a trait to make your own modifiers
+
 use super::{Samples, IntermediateSampleType, Sample};
 
 /// A trait to implement on your sample modifiers (aka effects). 

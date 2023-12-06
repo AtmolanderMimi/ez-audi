@@ -1,10 +1,14 @@
+//! All the toolkit to deal with errors from this library
+
 use std::{io, fmt::Display, error};
 
 use crate::cpal_abstraction::SampleType;
 
+/// A Result<T, ez_audi::PlayError>
 pub type Error<T> = Result<T, PlayError>;
 
 #[derive(Debug)]
+/// The error type used allthrought the ez_audi crate
 pub enum PlayError {
     TimeOutOfBounds,
     FileNotAccessible(io::Error),

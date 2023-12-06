@@ -6,6 +6,7 @@ use crate::{traits::AudioMetadataTrait, Error, errors::PlayError};
 
 use super::{config, Samples, Sample, Stream, SamplesPlayerTrait};
 
+/// An abstraction over cpal::Device, represents a physical output device
 pub struct Device {
     device: cpal::Device,
 }
