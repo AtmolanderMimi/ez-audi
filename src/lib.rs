@@ -1,5 +1,5 @@
 //!# Ez-Audi:
-//!**A lightweight (to be cross-platform/wasm-compilable(?)) audio library based on cpal**
+//!**A lightweight (to be cross-platform/wasm-compilable(?)) audio playback library based on cpal**
 //!
 //!## Features (as of now):
 //!* Read and play LPcm WAVE (.wav) files
