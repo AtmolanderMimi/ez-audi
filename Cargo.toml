@@ -6,7 +6,10 @@ license = "MIT OR Apache-2.0"
 
 authors = ["AtmolanderMimi <skylandersmimi@gmail.com>"]
 description = "A lightweight (to be cross-platform/wasm-compilable(?)) audio library based on cpal"
-categories = ["multimedia", "multimedia::audio", ]
+categories = ["multimedia", "multimedia::audio"]
+keywords = ["audio", "wav", "playback", "abstraction", "easy", "light"]
+
+exclude = ["/test_assets", "/src/bin"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
