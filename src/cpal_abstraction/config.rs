@@ -1,4 +1,4 @@
-use cpal::{SupportedOutputConfigs, SupportedStreamConfig, SupportedStreamConfigRange, SampleRate, SupportedBufferSize, SampleFormat};
+use cpal::{SupportedOutputConfigs, SupportedStreamConfigRange, SampleRate};
 
 use crate::{traits::AudioMetadataTrait, errors::{PlayError, AudioSettings}, Error};
 
@@ -6,7 +6,7 @@ use crate::{traits::AudioMetadataTrait, errors::{PlayError, AudioSettings}, Erro
 /// Tryies to find a stream config that fits exactly the provided config.
 /// For the moment it will not return anything if the config is not a almost perfect match (sample format, channel count and sample rate)
 pub fn find_fitting_stream_config(metadata: &impl AudioMetadataTrait, range: SupportedOutputConfigs) -> Error<SupportedStreamConfigRange> {
-    let mut supported_configs = range.collect::<Vec<_>>();
+    let supported_configs = range.collect::<Vec<_>>();
 
     let channels = metadata.channels() as u16;
 
@@ -78,11 +78,11 @@ pub fn find_fitting_stream_config(metadata: &impl AudioMetadataTrait, range: Sup
     Err(PlayError::DeviceDoesNotSupportAudioSettings(error_list, None))
 }
 
-/// Creates a new SupportedStreamConfig whilst transfering the generic integer types into the library's types.
-/// This creates a SupportedStreamConfig with the buffer size of Unknown for the moment.
-pub fn new_supported_stream_config(channels: u16, sample_rate: u32, sample_format: SampleFormat) -> SupportedStreamConfig {
-    let sample_rate = SampleRate(sample_rate);
-    // TODO: Figure out what is a buffer size
-    let buffer_size = SupportedBufferSize::Unknown;
-    SupportedStreamConfig::new(channels, sample_rate, buffer_size, sample_format)
-}
+///// Creates a new SupportedStreamConfig whilst transfering the generic integer types into the library's types.
+///// This creates a SupportedStreamConfig with the buffer size of Unknown for the moment.
+//pub fn _new_supported_stream_config(channels: u16, sample_rate: u32, sample_format: SampleFormat) -> SupportedStreamConfig {
+//    let sample_rate = SampleRate(sample_rate);
+//    // TODO: Figure out what is a buffer size
+//    let buffer_size = SupportedBufferSize::Unknown;
+//    SupportedStreamConfig::new(channels, sample_rate, buffer_size, sample_format)
+//}
