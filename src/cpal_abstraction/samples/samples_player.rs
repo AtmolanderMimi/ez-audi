@@ -32,7 +32,7 @@ where IntermediateSampleType: cpal::FromSample<T> {
         let mutex_lock = modified_samples_mutex.lock();
         match mutex_lock {
             Ok(l) => Some(l),
-            // TODO: Better error handling on that 
+            // TODO: Better error handling on that // Kinda? the Option enum signifies that
             Err(_) => None,
         }
     }
@@ -60,8 +60,6 @@ where IntermediateSampleType: cpal::FromSample<T> {
     }
 
     fn set_stream(&mut self, stream: cpal_abstraction::Stream) {
-        // TODO: Should not have to put the whole original samples here since
-        // it is reset when applying the modifiers
         self.apply_modifiers();
 
         self.stream = Some(stream);

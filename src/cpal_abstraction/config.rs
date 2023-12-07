@@ -77,12 +77,3 @@ pub fn find_fitting_stream_config(metadata: &impl AudioMetadataTrait, range: Sup
 
     Err(PlayError::DeviceDoesNotSupportAudioSettings(error_list, None))
 }
-
-///// Creates a new SupportedStreamConfig whilst transfering the generic integer types into the library's types.
-///// This creates a SupportedStreamConfig with the buffer size of Unknown for the moment.
-//pub fn _new_supported_stream_config(channels: u16, sample_rate: u32, sample_format: SampleFormat) -> SupportedStreamConfig {
-//    let sample_rate = SampleRate(sample_rate);
-//    // TODO: Figure out what is a buffer size
-//    let buffer_size = SupportedBufferSize::Unknown;
-//    SupportedStreamConfig::new(channels, sample_rate, buffer_size, sample_format)
-//}

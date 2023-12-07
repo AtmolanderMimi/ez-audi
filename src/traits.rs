@@ -36,8 +36,7 @@ pub trait AudioMetadataTrait {
     fn audio_codec(&self) -> AudioCodec;
     /// The number of channels in the audio
     fn channels(&self) -> u32;
-    // TODO: Is the fact ↓ true?
-    /// The number of samples processed in one second (Hz)
+    /// The number of samples prssocessed in one second (Hz)
     fn sample_rate(&self) -> u32;
     /// The underlying type of the samples, may be none if the codec does not use typical types
     fn sample_type(&self) -> Option<SampleType>;
