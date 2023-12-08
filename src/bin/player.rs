@@ -65,4 +65,12 @@ fn main() {
     player.play_on_default().unwrap();
     std::thread::sleep(std::time::Duration::from_secs_f32(WAIT_TIME));
     drop(player);
+
+    println!("Playing \"Shittified\"");
+    let gen_samples = samples.into_generic_representation_samples();
+    let mut player = SamplesPlayer::new(gen_samples.into_t_samples::<i16>());
+    player.add_modifier(Box::new(modifiers::Shittify));
+    player.play_on_default().unwrap();
+    std::thread::sleep(std::time::Duration::from_secs_f32(WAIT_TIME));
+    drop(player);
 }

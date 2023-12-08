@@ -8,6 +8,8 @@ mod volume;
 pub use volume::Volume;
 mod flatten;
 pub use flatten::Flatten;
+mod shittify;
+pub use shittify::Shittify;
 
 pub mod utils;
 
