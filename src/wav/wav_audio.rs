@@ -167,7 +167,7 @@ impl WavAudio {
     }
 
     /// Gets the samples byte by byte, used to pass into codecs
-    fn get_samples_bytes(&self) -> Error<Vec<u8>> {
+    pub fn get_samples_bytes(&self) -> Error<Vec<u8>> {
         let f = File::open(&self.file_path)?;
         let mut reader = BufReader::new(f);
 
@@ -184,17 +184,17 @@ impl WavAudio {
     }
 
     /// Gets the sample bytes and puts it through the u8 version of the decoder
-    fn get_samples_u8(&self) -> Error<Samples<u8>> {
+    fn get_samples_u8(&self) -> Error<Vec<u8>> {
         let samples_bytes = self.get_samples_bytes()?;
 
-        self.audio_codec.bytes_to_u8_samples(&samples_bytes, self.metadata.clone())
+        self.audio_codec.bytes_to_u8_samples(&samples_bytes, &self.metadata)
     }
 
     /// Gets the sample bytess and puts it through the i16 version of the decoder
-    fn get_samples_i16(&self) -> Error<Samples<i16>> {
+    fn get_samples_i16(&self) -> Error<Vec<i16>> {
         let samples_bytes = self.get_samples_bytes()?;
 
-        self.audio_codec.bytes_to_i16_samples(&samples_bytes, self.metadata.clone())
+        self.audio_codec.bytes_to_i16_samples(&samples_bytes, &self.metadata)
     }
 }
 
@@ -203,11 +203,15 @@ impl AudioFileTrait for WavAudio {
         match self.metadata.sample_type() {
             SampleType::U8 => {
                 let samples = self.get_samples_u8()?;
-                return Ok(Box::new(samples));
+
+                let samples_struct = Samples::new(samples, self.metadata.clone().into());
+                return Ok(Box::new(samples_struct));
             },
             SampleType::I16 => {
                 let samples = self.get_samples_i16()?;
-                return Ok(Box::new(samples));
+
+                let samples_struct = Samples::new(samples, self.metadata.clone().into());
+                return Ok(Box::new(samples_struct));
             },
             _ => return Err(PlayError::Unsupported(format!("unuported sample type {:?} for WAVE", self.sample_type())))
         }
@@ -217,11 +221,15 @@ impl AudioFileTrait for WavAudio {
         match self.metadata.sample_type() {
             SampleType::U8 => {
                 let samples = self.get_samples_u8()?;
-                return Ok(Box::new(SamplesPlayer::new(samples)));
+
+                let samples_struct = Samples::new(samples, self.metadata.clone().into());
+                return Ok(Box::new(SamplesPlayer::new(samples_struct)));
             },
             SampleType::I16 => {
                 let samples = self.get_samples_i16()?;
-                return Ok(Box::new(SamplesPlayer::new(samples)));
+                
+                let samples_struct = Samples::new(samples, self.metadata.clone().into());
+                return Ok(Box::new(SamplesPlayer::new(samples_struct)));
             },
             _ => todo!("unsupported")
         }

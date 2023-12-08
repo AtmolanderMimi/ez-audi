@@ -13,7 +13,7 @@
 //!
 //!## Get started
 //!```no_run
-//!use ez_audi::audio_types::WavAudio;
+//!use ez_audi::audio_files::WavAudio;
 //!use ez_audi::public_traits::*;
 //!
 //!let wav_audio = WavAudio::new("yourfilehere.wav").unwrap();
