@@ -1,8 +1,8 @@
 use std::sync::{Mutex, MutexGuard, Arc};
 
-use crate::{Device, traits::AudioMetadataTrait, cpal_abstraction, Error, errors::PlayError};
+use crate::{Device, traits::AudioMetadataTrait, cpal_abstraction, Error, errors::PlayError, modifiers::ModifierTrait};
 
-use super::{Sample, Samples, ModifierTrait, SamplesTrait, IntermediateSampleType};
+use super::{Sample, Samples, SamplesTrait, IntermediateSampleType};
 
 /// Manages the applying of modifiers and the sending of samples to audio streams
 pub struct SamplesPlayer<T: Sample> {

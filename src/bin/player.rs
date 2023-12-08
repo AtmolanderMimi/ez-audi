@@ -43,7 +43,7 @@ fn main() {
 
     println!("Playing from FLATTENED (1 channel) samples");
     let gen_samples = samples.into_generic_representation_samples();
-    let flattened_samples = modifiers::into_n_channels(gen_samples, 1);
+    let flattened_samples = modifiers::utils::into_n_channels(gen_samples, 1);
     let mut player = SamplesPlayer::new(flattened_samples.into_t_samples::<i16>());
     player.play_on_default().unwrap();
     std::thread::sleep(std::time::Duration::from_secs(2));
