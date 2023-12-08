@@ -6,6 +6,8 @@ mod r#loop;
 pub use r#loop::Loop;
 mod volume;
 pub use volume::Volume;
+mod flatten;
+pub use flatten::Flatten;
 
 pub mod utils;
 

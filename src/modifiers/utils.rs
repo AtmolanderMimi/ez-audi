@@ -72,7 +72,8 @@ pub fn into_n_channels(samples: Samples<IntermediateSampleType>, nb_channels: u1
     for (c_i,c) in new_channels_structs.iter().enumerate() {
         for s_i in 0..seperated_channels[0].len() {
             let new_sample = c.origin_channels_index.iter()
-                .fold(0.0, |o, n| o + (seperated_channels[*n][s_i] * c.factor_by_channel));
+                .fold(0.0, |o, n| o + (seperated_channels[*n].get(s_i).unwrap_or(&<IntermediateSampleType as cpal::Sample>::EQUILIBRIUM)
+                     * c.factor_by_channel as IntermediateSampleType));
 
             new_channels_samples[c_i].push(new_sample)
         }
