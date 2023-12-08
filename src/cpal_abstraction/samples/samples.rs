@@ -30,9 +30,9 @@ impl<T: Sample> Samples<T> {
 }
 
 impl Samples<IntermediateSampleType> {
-    /// Makes a clone of the samples in the desired sample type
-    pub fn into_t_samples<T: Sample + cpal::FromSample<IntermediateSampleType>>(&self) -> Samples<T> {
-        let samples = self.samples.clone().into_iter()
+    /// Turns the samples into the desired sample type, does not clone
+    pub fn into_t_samples<T: Sample + cpal::FromSample<IntermediateSampleType>>(self) -> Samples<T> {
+        let samples = self.samples.into_iter()
             .map(|s| s.to_sample::<T>())
             .collect();
 
@@ -47,15 +47,27 @@ impl Samples<IntermediateSampleType> {
 
 /// This is used to be able to store Samples Struct of multiple generic type in Box
 pub trait SamplesTrait {
+    /// Transforms the samples into IntermediateSampleType, does not clone
+    fn into_generic_representation_samples(self) -> Samples<IntermediateSampleType>;
+
     /// Makes a clone of the samples in the IntermediateSampleType
-    fn into_generic_representation_samples(&self) -> Samples<IntermediateSampleType>;
+    fn generic_representation_samples(&self) -> Samples<IntermediateSampleType>;
 
     fn metadata(&self) -> Box<dyn AudioMetadataTrait>;
 }
 
 impl<T: Sample> SamplesTrait for Samples<T>
 where IntermediateSampleType: cpal::FromSample<T> {
-    fn into_generic_representation_samples(&self) -> Samples<IntermediateSampleType> {
+    fn into_generic_representation_samples(self) -> Samples<IntermediateSampleType> {
+        let f32_samples = self.samples.into_iter().map(|s| s.to_sample()).collect();
+
+        let mut samples = Samples::new(f32_samples, self.metadata.clone());
+        samples.update_sample_type();
+
+        samples
+    }
+
+    fn generic_representation_samples(&self) -> Samples<IntermediateSampleType> {
         let f32_samples = self.samples.clone().into_iter().map(|s| s.to_sample()).collect();
 
         let mut samples = Samples::new(f32_samples, self.metadata.clone());

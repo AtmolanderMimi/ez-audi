@@ -4,8 +4,9 @@ use cpal;
 
 use super::Samples;
 
-/// Type that the samples with be converted to in order to do stuff such as apply modifiers
-pub type IntermediateSampleType = f64;
+/// Type that the samples with be converted to in order to do stuff such as apply modifiers.
+/// **Can be switched to f64 if the performance impact of moving double the data is worth it.**
+pub type IntermediateSampleType = f32;
 /// Trait implemented on all supported samples types
 pub trait Sample: cpal::SizedSample + cpal::FromSample<IntermediateSampleType> + std::marker::Send + 'static + Into<SampleType> + Debug {}
 

@@ -51,12 +51,15 @@ where IntermediateSampleType: cpal::FromSample<T> {
 
     /// Applies all the modifiers
     fn apply_modifiers(&mut self) {
+        // Most of the time seems to be spent moving samples, cloning and transfering from one type to another
         let mut modified_samples = self.original_samples.clone().into_generic_representation_samples();
         for modifier in &self.modifiers {
             modified_samples = modifier.modify(modified_samples);
         }
 
-        self.change_samples_with_modifiers(modified_samples.into_t_samples());
+        let t_samples = modified_samples.into_t_samples();
+        
+        self.change_samples_with_modifiers(t_samples);
     }
 
     fn set_stream(&mut self, stream: cpal_abstraction::Stream) {
