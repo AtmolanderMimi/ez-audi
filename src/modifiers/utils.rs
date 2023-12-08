@@ -110,3 +110,46 @@ pub fn join_channels<T: Sample>(seperated_channels: Vec<Vec<T>>) -> Vec<T> {
 
     coalescence
 }
+
+// TODO: Add interpolation
+/// Transforms the samples into the desired sample rate, this changes the metadata and samples.
+/// **This does not interpolate the samples.**
+pub fn into_sample_rate<T: Sample>(samples: Samples<T>, desired_sample_rate: u32) -> Samples<T> {
+    let old_samples_per_second = 1.0 / samples.metadata.sample_rate as f64;
+    let new_samples_per_second = 1.0 / desired_sample_rate as f64;
+
+    let mut index = 0;
+    let mut time: f64 = old_samples_per_second;
+
+    let metadata = samples.metadata.clone();
+    let nb_channels = metadata.channels.clone() as usize;
+
+    let old_samples = samples.samples;
+    let mut new_samples = Vec::new();
+
+    while index < old_samples.len() {
+        if time == 0.0 || time.is_sign_negative() {
+            time += old_samples_per_second;
+
+            index += nb_channels;
+        }
+
+        if time.is_sign_positive() {
+            time -= new_samples_per_second;
+            
+            for i in index..(index + nb_channels) {
+                let sample = match old_samples.get(i) {
+                    Some(s) => *s,
+                    None => <T as cpal::Sample>::EQUILIBRIUM,
+                };
+
+                new_samples.push(sample);
+            }
+        }
+    }
+
+    let mut new_metadata = metadata;
+    new_metadata.sample_rate = desired_sample_rate;
+
+    Samples::new(new_samples, new_metadata)
+}

@@ -47,4 +47,11 @@ fn main() {
     let mut player = SamplesPlayer::new(flattened_samples.into_t_samples::<i16>());
     player.play_on_default().unwrap();
     std::thread::sleep(std::time::Duration::from_secs(2));
+
+    println!("Playing with lower sample rate");
+    let gen_samples = samples.into_generic_representation_samples();
+    let lower_sample_rate_samples = modifiers::utils::into_sample_rate(gen_samples, 12000);
+    let mut player = SamplesPlayer::new(lower_sample_rate_samples.into_t_samples::<i16>());
+    player.play_on_default().unwrap();
+    std::thread::sleep(std::time::Duration::from_secs(2));
 }
