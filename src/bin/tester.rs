@@ -36,10 +36,10 @@ fn main() {
     std::thread::sleep(std::time::Duration::from_secs_f32(WAIT_TIME));
     drop(player);
     
-    println!("Playing from IntermediateRepresentation samples (don't worry it is meant to error out)");
+    println!("Playing from IntermediateRepresentation samples ");
     let gen_samples = samples.generic_representation_samples();
     let mut player = SamplesPlayer::new(gen_samples);
-    println!("{}", player.play_on_default().unwrap_err());
+    player.play_on_default().unwrap();
     std::thread::sleep(std::time::Duration::from_secs_f32(WAIT_TIME));
     drop(player);
 
