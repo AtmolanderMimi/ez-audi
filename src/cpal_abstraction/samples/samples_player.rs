@@ -4,7 +4,8 @@ use crate::{Device, traits::AudioMetadataTrait, cpal_abstraction, Error, errors:
 
 use super::{Sample, Samples, SamplesTrait, IntermediateSampleType};
 
-/// Manages the applying of modifiers and the sending of samples to audio streams
+/// Manages the applying of modifiers and the sending of samples to audio streams, **transforms the original sample into IntermediateSampleType which is much more efficient**.
+/// Go see ExactSamplesPlayer to send the exact sample type of the original sample to the audio streams.
 pub struct SamplesPlayer {
     original_samples: Samples<IntermediateSampleType>,
     modifiers: Vec<Box<dyn ModifierTrait>>,

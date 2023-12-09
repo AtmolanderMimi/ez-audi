@@ -213,7 +213,7 @@ impl AudioFileTrait for WavAudio {
                 let samples_struct = Samples::new(samples, self.metadata.clone().into());
                 return Ok(Box::new(samples_struct));
             },
-            _ => return Err(PlayError::Unsupported(format!("unuported sample type {:?} for WAVE", self.sample_type())))
+            _ => return Err(PlayError::Unsupported(format!("unsupported sample type {:?} for WAVE", self.sample_type())))
         }
     }
 
@@ -231,7 +231,7 @@ impl AudioFileTrait for WavAudio {
                 let samples_struct = Samples::new(samples, self.metadata.clone().into());
                 return Ok(Box::new(SamplesPlayer::new(samples_struct)));
             },
-            _ => todo!("unsupported")
+            _ => return Err(PlayError::Unsupported(format!("unsupported sample type {:?} for WAVE", self.sample_type())))
         }
     }
 
