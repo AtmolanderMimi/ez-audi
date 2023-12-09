@@ -38,9 +38,11 @@ mod traits;
 use errors::Error;
 
 pub use errors::PlayError;
-pub use cpal_abstraction::{Device, Stream, SamplesPlayer};
+pub use cpal_abstraction::{Device, Stream};
 
-pub mod modifiers;
+pub mod samples_player;
+pub use samples_player::SamplesPlayer;
+pub use samples_player::modifiers;
 
 pub mod audio_files {
     //! Functions and structs for dealing with audio files and their audio_codecs
@@ -67,7 +69,9 @@ pub mod public_traits {
     pub use traits::{AudioFileTrait, AudioMetadataTrait};
     pub use crate::audio_codecs::AudioCodecTrait;
     use crate::cpal_abstraction;
-    pub use cpal_abstraction::{SamplesPlayerTrait, SamplesTrait};
+    pub use cpal_abstraction::SamplesTrait;
+    use crate::samples_player;
+    pub use samples_player::SamplesPlayerTrait;
     use crate::modifiers;
     pub use modifiers::ModifierTrait;
 }

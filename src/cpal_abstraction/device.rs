@@ -3,8 +3,9 @@ use std::{fmt::Debug, sync::{Mutex, Arc}};
 use cpal::{self, traits::{HostTrait, DeviceTrait}, Host};
 
 use crate::{traits::AudioMetadataTrait, Error, errors::PlayError};
+use crate::samples_player::SamplesPlayerTrait;
 
-use super::{config, Samples, Sample, Stream, SamplesPlayerTrait};
+use super::{config, Samples, Sample, Stream};
 
 /// An abstraction over cpal::Device, represents a physical output device
 pub struct Device {

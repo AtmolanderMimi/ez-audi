@@ -4,7 +4,8 @@ use std::ops::Deref;
 
 use crate::errors::PlayError;
 use crate::traits::{AudioFileTrait, AudioMetadataTrait};
-use crate::cpal_abstraction::{SamplesMetadata, SamplesPlayerTrait, SamplesPlayer};
+use crate::cpal_abstraction::SamplesMetadata;
+use crate::samples_player::{SamplesPlayerTrait, SamplesPlayer, ExactSamplesPlayer};
 use crate::cpal_abstraction::{Samples, SampleType};
 use crate::wav::utils;
 use crate::audio_codecs::{AudioCodec, AudioCodecTrait};
@@ -217,26 +218,38 @@ impl AudioFileTrait for WavAudio {
         }
     }
 
-    fn make_player(&self) -> Error<Box<dyn SamplesPlayerTrait>> {
+    fn make_player(&self, is_exact: bool) -> Error<Box<dyn SamplesPlayerTrait>> {
         match self.metadata.sample_type() {
             SampleType::U8 => {
                 let samples = self.get_samples_u8()?;
 
                 let samples_struct = Samples::new(samples, self.metadata.clone().into());
-                return Ok(Box::new(SamplesPlayer::new(samples_struct)));
+
+                let samples_player = match is_exact {
+                    true => Box::new(SamplesPlayer::new(samples_struct)) as Box<dyn SamplesPlayerTrait>,
+                    false => Box::new(ExactSamplesPlayer::new(samples_struct)),
+                };
+
+                return Ok(samples_player);
             },
             SampleType::I16 => {
                 let samples = self.get_samples_i16()?;
                 
                 let samples_struct = Samples::new(samples, self.metadata.clone().into());
-                return Ok(Box::new(SamplesPlayer::new(samples_struct)));
+
+                let samples_player = match is_exact {
+                    true => Box::new(ExactSamplesPlayer::new(samples_struct)) as Box<dyn SamplesPlayerTrait>,
+                    false => Box::new(SamplesPlayer::new(samples_struct)),
+                };
+
+                return Ok(samples_player);
             },
             _ => return Err(PlayError::Unsupported(format!("unsupported sample type {:?} for WAVE", self.sample_type())))
         }
     }
 
-    fn play(&self, device: crate::cpal_abstraction::Device) -> Error<Box<dyn SamplesPlayerTrait>> {
-        let mut player = self.make_player()?;
+    fn play(&self, device: crate::cpal_abstraction::Device, is_exact: bool) -> Error<Box<dyn SamplesPlayerTrait>> {
+        let mut player = self.make_player(is_exact)?;
         player.play_on_device(device)?;
 
         Ok(player)
