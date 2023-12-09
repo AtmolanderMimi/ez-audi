@@ -1,6 +1,7 @@
 use crate::Error;
 use crate::audio_codecs::AudioCodec;
-use crate::cpal_abstraction::{Device, SampleType, SamplesPlayerTrait, SamplesTrait};
+use crate::cpal_abstraction::{Device, SampleType, SamplesTrait};
+use crate::samples_player::SamplesPlayerTrait;
 use crate::errors::PlayError;
 
 /// Trait implemented on every AudioFile structs, that handles playback
@@ -8,20 +9,20 @@ pub trait AudioFileTrait {
     /// Gets the file's samles
     fn get_samples(&self) -> Error<Box<dyn SamplesTrait>>;
 
-    /// Creates a SamplesPlayer with the samples of the file
-    fn make_player(&self) -> Error<Box<dyn SamplesPlayerTrait>>;
+    /// Creates a SamplesPlayer with the samples of the file, can be exact or not (exact tends to be very slower)
+    fn make_player(&self, is_exact: bool) -> Error<Box<dyn SamplesPlayerTrait>>;
 
     /// Starts playing the audio from a certain duration
-    fn play(&self, device: Device) -> Error<Box<dyn SamplesPlayerTrait>>;
+    fn play(&self, device: Device, is_exact: bool) -> Error<Box<dyn SamplesPlayerTrait>>;
 
     /// Plays on the default output of the default host
-    fn play_on_default_output(&self) -> Error<Box<dyn SamplesPlayerTrait>> {
+    fn play_on_default_output(&self, is_exact: bool) -> Error<Box<dyn SamplesPlayerTrait>> {
         let device = match Device::default_output() {
             Some(d) => d,
             None => return Err(PlayError::DeviceDoesNotExist { name: "default".to_string() })
         };
 
-        self.play(device)
+        self.play(device, is_exact)
     }
 
     /// Returns the file's metadata

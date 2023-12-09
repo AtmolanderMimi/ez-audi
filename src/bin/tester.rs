@@ -1,4 +1,3 @@
-
 use ez_audi::audio_files::WavAudio;
 use ez_audi::{public_traits::*, SamplesPlayer, modifiers};
 
@@ -12,7 +11,7 @@ fn main() {
 
     let true_before = std::time::SystemTime::now();
     println!("Playing strait from WavAudio...");
-    let mut player = wav_audio.play_on_default_output().unwrap();
+    let mut player = wav_audio.play_on_default_output(false).unwrap();
     std::thread::sleep(std::time::Duration::from_secs_f32(WAIT_TIME));
 
     println!("Adding loop modifier for convinience");

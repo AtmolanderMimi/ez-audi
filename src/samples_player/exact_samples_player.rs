@@ -1,20 +1,23 @@
 use std::sync::{Mutex, MutexGuard, Arc};
 
-use crate::{Device, traits::AudioMetadataTrait, cpal_abstraction, Error, errors::PlayError, modifiers::ModifierTrait};
+use crate::{Device, traits::AudioMetadataTrait, cpal_abstraction, Error, modifiers::ModifierTrait};
 
-use super::{Sample, Samples, SamplesTrait, IntermediateSampleType};
+use cpal_abstraction::{Sample, Samples, SamplesTrait, IntermediateSampleType};
 
-/// Manages the applying of modifiers and the sending of samples to audio streams
-pub struct SamplesPlayer<T: Sample> {
+use super::SamplesPlayerTrait;
+
+/// Manages the applying of modifiers and the sending of samples to audio streams, **DOES NOT transform the original sample into IntermediateSampleType which is much slower**.
+/// Go see SamplesPlayer for a more efficient samples player.
+pub struct ExactSamplesPlayer<T: Sample> {
     original_samples: Samples<T>,
     modifiers: Vec<Box<dyn ModifierTrait>>,
     samples_with_modifiers: Option<Arc<Mutex<Samples<T>>>>,
     stream: Option<cpal_abstraction::Stream>,
 }
 
-impl<T: Sample> SamplesPlayer<T>
+impl<T: Sample> ExactSamplesPlayer<T>
 where IntermediateSampleType: cpal::FromSample<T> {
-    pub fn new(samples: Samples<T>) -> SamplesPlayer<T> {
+    pub fn new(samples: Samples<T>) -> ExactSamplesPlayer<T> {
         Self {
             original_samples: samples,
             modifiers: Vec::new(),
@@ -69,38 +72,7 @@ where IntermediateSampleType: cpal::FromSample<T> {
     }
 }
 
-/// Trait that implements the functionality of the SamplesPlayer struct
-pub trait SamplesPlayerTrait {
-    /// Returns the metadata of the samples
-    fn metadata(&self) -> Box<dyn AudioMetadataTrait>;
-
-    /// Adds a modifier
-    fn add_modifier(&mut self, modifier: Box<dyn ModifierTrait>);
-
-    /// Clears all modifiers and their effects
-    fn clear_modifiers(&mut self);
-
-    /// Starts/Continues the playing
-    fn start(&self) -> Error<()>;
-
-    /// Stops the playing
-    fn stop(&self) -> Error<()>;
-
-    /// Starts playing on a device
-    fn play_on_device(&mut self, _device: Device) -> Error<()>;
-
-    /// Starts playing on the default device of the default host
-    fn play_on_default(&mut self) -> Error<()> {
-        let default_output = match Device::default_output() {
-            Some(o) => o,
-            None => return Err(PlayError::DeviceDoesNotExist { name : "default".to_string() }),
-        };
-
-        self.play_on_device(default_output)
-    }
-}
-
-impl<T: Sample> SamplesPlayerTrait for SamplesPlayer<T>
+impl<T: Sample> SamplesPlayerTrait for ExactSamplesPlayer<T>
 where IntermediateSampleType: cpal::FromSample<T> {
     fn metadata(&self) -> Box<dyn AudioMetadataTrait> {
         Box::new(self.original_samples.metadata.clone())
