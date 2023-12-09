@@ -136,9 +136,7 @@ impl SamplesPlayerTrait for SamplesPlayer {
 
     fn play_on_device(&mut self, device: Device) -> Error<()> {
         // Makes sure that there is a Sample in self.samples_with_modifiers
-        let true_before = std::time::SystemTime::now();
         self.apply_modifiers();
-        println!("Application time {:?}", std::time::SystemTime::elapsed(&true_before));
 
         let samples_arc = self.samples_with_modifiers
             .as_ref()
