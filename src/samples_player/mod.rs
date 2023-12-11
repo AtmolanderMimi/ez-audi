@@ -1,3 +1,6 @@
+//! Contains all the types of sample players,
+//! use SamplesPlayer for speed and ExactSamplesPlayer for control
+
 pub mod modifiers;
 
 mod samples_player_trait;

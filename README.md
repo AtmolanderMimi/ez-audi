@@ -1,4 +1,4 @@
-# Ez-Audi:
+# Ez-Audi
 **A lightweight (to be cross-platform/wasm-compilable(?)) audio playback library based on cpal**
 
 ## Features (as of now):
@@ -19,7 +19,7 @@ use ez_audi::public_traits::*;
 let wav_audio = WavAudio::new("yourfilehere.wav").unwrap();
 
 // Creates an audio player, keep it in scope to keep the audio playing
-let player = wav_audio.play_on_default_output().unwrap();
+let player = wav_audio.play_on_default_output(false).unwrap();
 
 std::thread::sleep(std::time::Duration::from_secs(2));
 ```
@@ -27,4 +27,3 @@ std::thread::sleep(std::time::Duration::from_secs(2));
 ## What is left to do:
 * Pretty much everything, don't use this in any serious projects unless you enjoy relying on unstable, buggy code
 * The documentation is also very much lacking
-* The projet is **very much still in development** if you are not intersted now, please come back later
