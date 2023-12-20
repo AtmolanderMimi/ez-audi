@@ -11,13 +11,25 @@ use crate::wav::utils;
 use crate::audio_codecs::{AudioCodec, AudioCodecTrait};
 use crate::errors::Error;
 
-const FMT_ID_END_BYTE: u8 = 32;
-/// The block size (without the "fmt " id)
-const FMT_BLOCK_SIZE: usize = 24;
+const FMT_ID_END_BYTE: u8 = b' ';
+/// The "fmt " block size if the format is LPCM, at least all we need of it
+/// (does not include the "fmt " and "data" indentificator)
+const FMT_BLOCK_SIZE: usize = 20;
 
 /// Reads until and passes the "fmt " id
 fn read_until_fmt_block_and_pass(reader: &mut BufReader<File>) -> Result<(), PlayError> {
     reader.read_until(FMT_ID_END_BYTE, &mut Vec::new())?;
+
+    Ok(())
+}
+
+/// Reads until and passes the "fmt " id
+fn read_all_of_header(reader: &mut BufReader<File>) -> Result<(), PlayError> {
+    read_until_fmt_block_and_pass(reader)?;
+
+    // Reads until the start of the data indicator then passes it
+    reader.read_until(b'd', &mut Vec::new())?;
+    reader.read_exact(&mut [0; 3])?;
 
     Ok(())
 }
@@ -172,11 +184,8 @@ impl WavAudio {
         let f = File::open(&self.file_path)?;
         let mut reader = BufReader::new(f);
 
-        // Removes the header
-        read_until_fmt_block_and_pass(&mut reader)?;
-
-        let mut header = [0u8; FMT_BLOCK_SIZE];
-        reader.read_exact(&mut header)?;
+        // Removed the header
+        read_all_of_header(&mut reader)?;
 
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes)?;
