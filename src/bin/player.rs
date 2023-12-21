@@ -2,7 +2,7 @@ use ez_audi::audio_files::WavAudio;
 use ez_audi::{public_traits::*, modifiers};
 
 fn main() {
-    const FILE_NAME: &str = "test_assets/tanger-ike.wav";
+    const FILE_NAME: &str = "test_assets/helium.wav";
     const EXACT: bool = false;
     const VOLUME: f32 = 1.0;
     let wav_audio = WavAudio::new(FILE_NAME).unwrap();
