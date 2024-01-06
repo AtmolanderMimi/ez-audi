@@ -23,7 +23,7 @@ mod tests {
 
     #[test]
     fn detects_wav_files() {
-        let is_wav = file_is_wav("test_assets/9000.wav").unwrap();
+        let is_wav = file_is_wav("test_assets/helium.wav").unwrap();
         assert!(is_wav);
     }
 

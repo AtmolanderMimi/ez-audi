@@ -1,6 +1,6 @@
 //! All the toolkit to deal with errors from this library
 
-use std::{io, fmt::Display, error};
+use std::{io, fmt::Display, error, sync::PoisonError};
 
 use crate::cpal_abstraction::SampleType;
 
@@ -24,6 +24,8 @@ pub enum PlayError {
     DeviceDoesNotExist{ name: String },
     /// Error while trying to comunicate with a stream
     StreamIoError(String, Option<Box<dyn error::Error + 'static>>),
+    /// A `Mutex` got poisoned and is not accessible anymore
+    PoisonedMutex(String, Box<dyn error::Error>),
     /// Feature is not support as of yet
     Unsupported(String),
 }
@@ -38,6 +40,7 @@ impl Display for PlayError {
             Self::DeviceIoError(c, _) => f.write_str(&format!("the device had an issue with io because {c}")),
             Self::DeviceDoesNotSupportAudioSettings(s, _) => f.write_str(&format!("the device had an issue with config because {s:?} is/are not supported")),
             Self::StreamIoError(s, _) => f.write_str(&format!("error while communicating with stream: {s}")),
+            Self::PoisonedMutex(s, _) => f.write_str(&format!("error while trying to access mutex {s}")),
             Self::Unsupported(e) => f.write_str(&format!("ez_audi does not support '{}'", e)),
         }
     }
@@ -68,6 +71,7 @@ impl error::Error for PlayError {
                     None => None,
                 }
             },
+            Self::PoisonedMutex(_, s) => Some(&**s),
             Self::Unsupported(_) => None,
         }
     }
@@ -88,6 +92,12 @@ impl From<cpal::PlayStreamError> for PlayError {
 impl From<cpal::PauseStreamError> for PlayError {
     fn from(value: cpal::PauseStreamError) -> Self {
         Self::StreamIoError("failed pause stream".to_string(), Some(Box::new(value)))
+    }
+}
+
+impl<T: 'static> From<PoisonError<T>> for PlayError {
+    fn from(value: PoisonError<T>) -> Self {
+        Self::PoisonedMutex("".to_string(), Box::new(value))
     }
 }
 

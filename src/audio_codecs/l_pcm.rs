@@ -28,17 +28,20 @@ mod tests {
     use crate::{wav::WavAudio, traits::AudioFileTrait};
 
     fn wav_audio_u8() -> WavAudio {
-        WavAudio::new("test_assets/u8-stereo-lpcm.wav").unwrap()
+        WavAudio::build_from_path("test_assets/u8-stereo-lpcm.wav").unwrap()
     }
     
     fn wav_audio_i16() -> WavAudio {
-        WavAudio::new("test_assets/i16-stereo-lpcm.wav").unwrap()
+        WavAudio::build_from_path("test_assets/i16-stereo-lpcm.wav").unwrap()
     }
 
     #[test]
     fn lpcm_u8_works() {
         let wav = wav_audio_u8();
         let bytes = wav.get_samples_bytes().unwrap();
+        for i in 0..100 {
+            print!("{:?}, ", bytes[i]);
+        }
 
         let samples = LPcm::default().bytes_to_u8_samples(&bytes, wav.metadata().as_ref()).unwrap();
         assert_eq!(samples[0], 182u8);

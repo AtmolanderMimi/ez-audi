@@ -1,4 +1,4 @@
-use std::io::{BufReader, Read, BufRead};
+use std::io::{BufReader, Read, BufRead, Seek};
 use std::fs::File;
 use std::ops::Deref;
 
@@ -17,18 +17,19 @@ const FMT_ID_END_BYTE: u8 = b' ';
 const FMT_BLOCK_SIZE: usize = 20;
 
 /// Reads until and passes the "fmt " id
-fn read_until_fmt_block_and_pass(reader: &mut BufReader<File>) -> Result<(), PlayError> {
+fn read_until_fmt_block_and_pass<T: BufRead + Seek>(reader: &mut T) -> Result<(), PlayError> {
     reader.read_until(FMT_ID_END_BYTE, &mut Vec::new())?;
 
     Ok(())
 }
 
 /// Reads until and passes the "fmt " id
-fn read_all_of_header(reader: &mut BufReader<File>) -> Result<(), PlayError> {
+fn read_all_of_header<T: BufRead + Seek>(reader: &mut T) -> Result<(), PlayError> {
     read_until_fmt_block_and_pass(reader)?;
 
     // Reads until the start of the data indicator then passes it
     reader.read_until(b'd', &mut Vec::new())?;
+    //reader.read_until(b'a', &mut Vec::new())?;
     reader.read_exact(&mut [0; 3])?;
 
     Ok(())
@@ -38,7 +39,7 @@ fn read_all_of_header(reader: &mut BufReader<File>) -> Result<(), PlayError> {
 /// Info contained in the WAVE file header
 pub struct WavAudioMetadata {
     /// Where the file is
-    file_path: String,
+    file_path: Option<String>,
     /// The codec in which the data is read
     audio_codec: AudioCodec,
     /// Numbers of channels: mono = 1, Stereo = 2, etc...
@@ -54,8 +55,7 @@ pub struct WavAudioMetadata {
 
 impl WavAudioMetadata {
     /// Gets the metadata from the file's header. Assumes that the file is a WAVE file
-    pub fn new(path: &str) -> Result<WavAudioMetadata, PlayError> {
-        let f = File::open(path)?;
+    pub fn build_from_file(f: &File) -> Error<WavAudioMetadata> {
         let mut reader = BufReader::new(f);
         read_until_fmt_block_and_pass(&mut reader)?;
 
@@ -75,7 +75,7 @@ impl WavAudioMetadata {
         let bits_per_sample = u16::from_le_bytes(fmt_block[18..20].try_into().unwrap());
 
         let metadata = WavAudioMetadata {
-            file_path: path.to_string(),
+            file_path: None,
             audio_codec,
             sample_rate,
             channels,
@@ -85,8 +85,21 @@ impl WavAudioMetadata {
         Ok(metadata)
     }
 
+    /// Gets the metadata from the file's header. Assumes that the file is a WAVE file
+    pub fn build_from_path(path: &str) -> Error<WavAudioMetadata> {
+        let f = File::open(path)?;
+        
+        let mut wav_audio = Self::build_from_file(&f)?;
+        wav_audio.set_file_path(path.to_string());
+        Ok(wav_audio)
+    }
+
+    pub(self) fn set_file_path(&mut self, path: String) {
+        self.file_path = Some(path)
+    }
+
     /// Returns the file path
-    pub fn file_path(&self) -> String {
+    pub fn file_path(&self) -> Option<String> {
         self.file_path.clone()
     }
 
@@ -133,7 +146,7 @@ impl WavAudioMetadata {
 
 impl AudioMetadataTrait for WavAudioMetadata {
     fn file_path(&self) -> Option<String> {
-        Some(self.file_path())
+        self.file_path()
     }
 
     fn audio_codec(&self) -> AudioCodec {
@@ -153,36 +166,52 @@ impl AudioMetadataTrait for WavAudioMetadata {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[non_exhaustive]
 /// A link to a WAVE file
 pub struct WavAudio {
     // The path to the .wav file
-    file_path: String,
+    file: File,
     metadata: WavAudioMetadata,
 }
 
 impl WavAudio {
     /// Creates a new WavAudio and checks if the file is a valid WAVE file
-    pub fn new(path: &str) -> Error<WavAudio> {
-        if !utils::file_is_wav(path)? {
-            return Err(PlayError::WrongFileType);
-        }
-        
-        let metadata = WavAudioMetadata::new(&path)?;
+    pub fn build_from_path(path: &str) -> Error<WavAudio> {
+        let file = File::open(path)?;
+
+        let audio = Self::build_from_file(file)?;
+
+        Ok(audio)
+    }
+
+    /// Creates a new WavAudio and checks if the file is a valid WAVE file
+    pub fn build_from_file(file: File) -> Error<WavAudio> {
+        //FIXME: change utils to file
+        //if !utils::file_is_wav(path)? {
+        //    return Err(PlayError::WrongFileType);
+        //}
+
+        let metadata = WavAudioMetadata::build_from_file(&file)?;
         
         let audio = WavAudio {
-            file_path: path.to_string(),
+            file: file,
             metadata,
         };
 
         Ok(audio)
     }
 
+    /// Gets the mutex and happily convices it to become a `BufReader`
+    fn get_file_buf_reader(&self) -> Error<BufReader<&File>> {
+        let mut reader = BufReader::new(&self.file);
+        reader.rewind()?;
+        Ok(reader)
+    } 
+
     /// Gets the samples byte by byte, used to pass into codecs
     pub fn get_samples_bytes(&self) -> Error<Vec<u8>> {
-        let f = File::open(&self.file_path)?;
-        let mut reader = BufReader::new(f);
+        let mut reader = self.get_file_buf_reader()?;
 
         // Removed the header
         read_all_of_header(&mut reader)?;
@@ -291,18 +320,18 @@ mod tests {
 
     #[test]
     fn metadata_is_valid() {
-        let meta = WavAudioMetadata::new("test_assets/9000.wav").unwrap();
+        let meta = WavAudioMetadata::build_from_path("test_assets/helium.wav").unwrap();
 
         assert_eq!(meta.audio_codec, AudioCodec::LPcm);
 
-        assert_eq!(meta.channels, 1);
+        assert_eq!(meta.channels, 2);
 
-        assert_eq!(meta.sample_rate, 22050);
+        assert_eq!(meta.sample_rate, 48000);
 
         assert_eq!(meta.bits_per_sample, 16);
 
-        assert_eq!(meta.byte_rate(), 44100);
+        assert_eq!(meta.byte_rate(), 192000);
 
-        assert_eq!(meta.block_align(), 2)
+        assert_eq!(meta.block_align(), 4)
     }
 }

@@ -4,7 +4,7 @@ use ez_audi::{public_traits::*, SamplesPlayer, modifiers};
 fn main() {
     const WAIT_TIME: f32 = 5.0;
     const FILE_NAME: &str = "test_assets/tanger-ike.wav";
-    let wav_audio = WavAudio::new(FILE_NAME).unwrap();
+    let wav_audio = WavAudio::build_from_path(FILE_NAME).unwrap();
     println!("Sample type: {:?}", wav_audio.metadata().sample_type());
 
     let samples = wav_audio.get_samples().unwrap();

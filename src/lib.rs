@@ -13,10 +13,10 @@
 //! 
 //! ## Get started
 //! ```no_run
-//! use ez_audi::audio_types::WavAudio;
+//! use ez_audi::audio_files::WavAudio;
 //! use ez_audi::public_traits::*;
 //! 
-//! let wav_audio = WavAudio::new("yourfilehere.wav").unwrap();
+//! let wav_audio = WavAudio::build_from_path("test_assets/u8-stereo-lpcm.wav").unwrap();
 //! 
 //! // Creates an audio player, keep it in scope to keep the audio playing
 //! let player = wav_audio.play_on_default_output(false).unwrap();
