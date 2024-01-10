@@ -181,7 +181,7 @@ pub struct WavAudio<T: ReadSeek> {
 
 impl<T: ReadSeek> WavAudio<T> {
     /// Creates a new WavAudio and checks if the file is a valid WAVE file
-    pub fn build_from_data(mut data: T) -> Error<WavAudio<T>> {
+    pub fn build_from_reader(mut data: T) -> Error<WavAudio<T>> {
         //FIXME: change utils to file
         //if !utils::file_is_wav(path)? {
         //    return Err(PlayError::WrongFileType);
@@ -237,7 +237,7 @@ impl WavAudio<File> {
     pub fn build_from_path(path: &str) -> Error<WavAudio<File>> {
         let file = File::open(path)?;
 
-        let audio: WavAudio<File> = WavAudio::<File>::build_from_data(file)?;
+        let audio: WavAudio<File> = WavAudio::<File>::build_from_reader(file)?;
 
         Ok(audio)
     }
@@ -356,6 +356,6 @@ mod tests {
         let bytes = get_bytes(file);
 
         // Thank the lord (I am not religious, but there is no way this is not a miracle)
-        let _: WavAudio<Cursor<Vec<u8>>> = WavAudio::build_from_data(Cursor::new(bytes)).unwrap();
+        let _: WavAudio<Cursor<Vec<u8>>> = WavAudio::build_from_reader(Cursor::new(bytes)).unwrap();
     }
 }
