@@ -1,3 +1,4 @@
+use std::cell::{RefCell, RefMut};
 use std::io::{BufReader, Read, BufRead, Seek};
 use std::fs::File;
 use std::ops::Deref;
@@ -17,15 +18,15 @@ const FMT_ID_END_BYTE: u8 = b' ';
 const FMT_BLOCK_SIZE: usize = 20;
 
 /// Reads until and passes the "fmt " id
-fn read_until_fmt_block_and_pass<T: BufRead + Seek>(reader: &mut T) -> Result<(), PlayError> {
+fn read_until_fmt_block_and_pass<T: BufRead + Seek>(mut reader: T) -> Result<(), PlayError> {
     reader.read_until(FMT_ID_END_BYTE, &mut Vec::new())?;
 
     Ok(())
 }
 
 /// Reads until and passes the "fmt " id
-fn read_all_of_header<T: BufRead + Seek>(reader: &mut T) -> Result<(), PlayError> {
-    read_until_fmt_block_and_pass(reader)?;
+fn read_all_of_header<T: BufRead + Seek>(mut reader: T) -> Result<(), PlayError> {
+    read_until_fmt_block_and_pass(&mut reader)?;
 
     // Reads until the start of the data indicator then passes it
     reader.read_until(b'd', &mut Vec::new())?;
@@ -55,7 +56,7 @@ pub struct WavAudioMetadata {
 
 impl WavAudioMetadata {
     /// Gets the metadata from the file's header. Assumes that the file is a WAVE file
-    pub fn build_from_file(f: &File) -> Error<WavAudioMetadata> {
+    pub fn build_from_reader(f: impl ReadSeek) -> Error<WavAudioMetadata> {
         let mut reader = BufReader::new(f);
         read_until_fmt_block_and_pass(&mut reader)?;
 
@@ -89,7 +90,7 @@ impl WavAudioMetadata {
     pub fn build_from_path(path: &str) -> Error<WavAudioMetadata> {
         let f = File::open(path)?;
         
-        let mut wav_audio = Self::build_from_file(&f)?;
+        let mut wav_audio = Self::build_from_reader(&f)?;
         wav_audio.set_file_path(path.to_string());
         Ok(wav_audio)
     }
@@ -166,45 +167,39 @@ impl AudioMetadataTrait for WavAudioMetadata {
     }
 }
 
+pub trait ReadSeek: Read + Seek {}
+impl<T: Read + Seek> ReadSeek for T {}
+
 #[derive(Debug)]
 #[non_exhaustive]
 /// A link to a WAVE file
-pub struct WavAudio {
+pub struct WavAudio<T: ReadSeek> {
     // The path to the .wav file
-    file: File,
+    data: RefCell<BufReader<T>>, // TODO: RefCell is not safe in parrallel enviroments
     metadata: WavAudioMetadata,
 }
 
-impl WavAudio {
+impl<T: ReadSeek> WavAudio<T> {
     /// Creates a new WavAudio and checks if the file is a valid WAVE file
-    pub fn build_from_path(path: &str) -> Error<WavAudio> {
-        let file = File::open(path)?;
-
-        let audio = Self::build_from_file(file)?;
-
-        Ok(audio)
-    }
-
-    /// Creates a new WavAudio and checks if the file is a valid WAVE file
-    pub fn build_from_file(file: File) -> Error<WavAudio> {
+    pub fn build_from_data(mut data: T) -> Error<WavAudio<T>> {
         //FIXME: change utils to file
         //if !utils::file_is_wav(path)? {
         //    return Err(PlayError::WrongFileType);
         //}
 
-        let metadata = WavAudioMetadata::build_from_file(&file)?;
+        let metadata = WavAudioMetadata::build_from_reader(&mut data)?;
         
         let audio = WavAudio {
-            file: file,
+            data: RefCell::new(BufReader::new(data)),
             metadata,
         };
 
         Ok(audio)
     }
 
-    /// Gets the mutex and happily convices it to become a `BufReader`
-    fn get_file_buf_reader(&self) -> Error<BufReader<&File>> {
-        let mut reader = BufReader::new(&self.file);
+    /// Gets the the reader, with no issues at all
+    fn get_file_buf_reader(&self) -> Error<RefMut<BufReader<T>>> {
+        let mut reader = self.data.borrow_mut();
         reader.rewind()?;
         Ok(reader)
     } 
@@ -214,7 +209,7 @@ impl WavAudio {
         let mut reader = self.get_file_buf_reader()?;
 
         // Removed the header
-        read_all_of_header(&mut reader)?;
+        read_all_of_header(&mut *reader)?;
 
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes)?;
@@ -237,7 +232,18 @@ impl WavAudio {
     }
 }
 
-impl AudioFileTrait for WavAudio {
+impl WavAudio<File> {
+    /// Creates a new WavAudio and checks if the file is a valid WAVE file
+    pub fn build_from_path(path: &str) -> Error<WavAudio<File>> {
+        let file = File::open(path)?;
+
+        let audio: WavAudio<File> = WavAudio::<File>::build_from_data(file)?;
+
+        Ok(audio)
+    }
+}
+
+impl<T: ReadSeek> AudioFileTrait for WavAudio<T> {
     fn get_samples(&self) -> Error<Box<dyn crate::cpal_abstraction::SamplesTrait>> {
         match self.metadata.sample_type() {
             SampleType::U8 => {
@@ -298,7 +304,7 @@ impl AudioFileTrait for WavAudio {
     }
 }
 
-impl Deref for WavAudio {
+impl<T: ReadSeek> Deref for WavAudio<T> {
     type Target = WavAudioMetadata;
 
     fn deref(&self) -> &Self::Target {
@@ -316,6 +322,8 @@ impl From<WavAudioMetadata> for SamplesMetadata {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
     use super::*;
 
     #[test]
@@ -333,5 +341,21 @@ mod tests {
         assert_eq!(meta.byte_rate(), 192000);
 
         assert_eq!(meta.block_align(), 4)
+    }
+
+    fn get_bytes(mut file: File) -> Vec<u8> {
+        let metadata = file.metadata().expect("unable to read metadata");
+        let mut buffer = vec![0; metadata.len() as usize];
+        file.read(&mut buffer).expect("buffer overflow");
+        buffer
+    } 
+
+    #[test]
+    fn generics_dont_implode() {
+        let file = File::open("test_assets/helium.wav").unwrap();
+        let bytes = get_bytes(file);
+
+        // Thank the lord (I am not religious, but there is no way this is not a miracle)
+        let _: WavAudio<Cursor<Vec<u8>>> = WavAudio::build_from_data(Cursor::new(bytes)).unwrap();
     }
 }

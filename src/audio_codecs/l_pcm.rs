@@ -27,11 +27,11 @@ mod tests {
     use super::*;
     use crate::{wav::WavAudio, traits::AudioFileTrait};
 
-    fn wav_audio_u8() -> WavAudio {
+    fn wav_audio_u8() -> WavAudio<std::fs::File> {
         WavAudio::build_from_path("test_assets/u8-stereo-lpcm.wav").unwrap()
     }
     
-    fn wav_audio_i16() -> WavAudio {
+    fn wav_audio_i16() -> WavAudio<std::fs::File> {
         WavAudio::build_from_path("test_assets/i16-stereo-lpcm.wav").unwrap()
     }
 
