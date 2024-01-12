@@ -66,7 +66,7 @@ impl WavAudioMetadata {
         let audio_codec_value = u16::from_le_bytes(fmt_block[4..6].try_into().unwrap());
         let audio_codec = match audio_codec_value {
             1 => AudioCodec::LPcm,
-            _ => return Err(PlayError::Unsupported("audio format other than LPCM".to_string())),
+            v => return Err(PlayError::Unsupported(format!("audio format other than LPCM. Audio codec value of: {:?}", v))),
         };
 
         let channels = u16::from_le_bytes(fmt_block[6..8].try_into().unwrap());
@@ -140,7 +140,7 @@ impl WavAudioMetadata {
         match self.bits_per_sample {
             8 => SampleType::U8,
             16 => SampleType::I16,
-            _ => todo!("Unsupported")
+            n => todo!("Unsupported {:?} bits", n)
         }
     }
 }
@@ -181,16 +181,18 @@ pub struct WavAudio<T: ReadSeek> {
 
 impl<T: ReadSeek> WavAudio<T> {
     /// Creates a new WavAudio and checks if the file is a valid WAVE file
-    pub fn build_from_reader(mut data: T) -> Error<WavAudio<T>> {
+    pub fn build_from_reader(data: T) -> Error<WavAudio<T>> {
         //FIXME: change utils to file
         //if !utils::file_is_wav(path)? {
         //    return Err(PlayError::WrongFileType);
         //}
+        let mut data = BufReader::new(data);
 
         let metadata = WavAudioMetadata::build_from_reader(&mut data)?;
+        data.rewind()?;
         
         let audio = WavAudio {
-            data: RefCell::new(BufReader::new(data)),
+            data: RefCell::new(data),
             metadata,
         };
 

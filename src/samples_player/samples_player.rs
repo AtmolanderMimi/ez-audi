@@ -117,6 +117,9 @@ impl SamplesPlayerTrait for SamplesPlayer {
         let stream = device.create_stream(&self.original_samples.metadata,
             samples_arc)?;
 
+        // Makes sure that the stream is started
+        stream.start()?;
+
         self.set_stream(stream);
 
         Ok(())
