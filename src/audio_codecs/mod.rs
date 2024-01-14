@@ -22,6 +22,7 @@ pub trait AudioCodecTrait {
 /// Enumeration of all the audio codecs, allows static dispatch on decoding rather than using
 /// a trait object
 pub enum AudioCodec {
+    /// The Linear Pulse-Code Modulation encoding. Often refered to as just PCM.
     LPcm,
 }
 

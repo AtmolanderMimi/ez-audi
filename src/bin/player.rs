@@ -10,7 +10,10 @@ fn main() {
     //let wav_audio = WavAudio::build_from_path(FILE_NAME).unwrap();
     //let mut player = wav_audio.play_on_default_output(EXACT).unwrap();
 
-    // More WASM frendly way:
+    // More WASM frendly way.
+    // We get a the bytes then make a reader with it:
+    // Note that we can't use File in WASM, so the bytes
+    // should probably come from a GET request 
     let file = std::fs::File::open(FILE_NAME).unwrap();
     let bytes = get_bytes(file);
     

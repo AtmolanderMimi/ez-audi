@@ -17,6 +17,7 @@ pub struct ExactSamplesPlayer<T: Sample> {
 
 impl<T: Sample> ExactSamplesPlayer<T>
 where IntermediateSampleType: cpal::FromSample<T> {
+    /// Creates a new `SamplePlayer` directly from `Samples<T>`
     pub fn new(samples: Samples<T>) -> ExactSamplesPlayer<T> {
         Self {
             original_samples: samples,

@@ -16,6 +16,7 @@ pub struct SamplesPlayer {
 }
 
 impl SamplesPlayer {
+    /// Creates a new `SamplePlayer` directly from `Samples<T>`
     pub fn new<T: Sample>(samples: Samples<T>) -> SamplesPlayer
     where IntermediateSampleType: cpal::FromSample<T> {
         Self {

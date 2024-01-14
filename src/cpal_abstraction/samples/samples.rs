@@ -7,7 +7,15 @@ use super::{SampleType, Sample, IntermediateSampleType};
 #[derive(Debug, Clone)]
 /// A sample container of LPcm samples ready to be send to audio streams
 pub struct Samples<T: Sample> {
+    /// A an ordered vector of all the samples,
+    /// if there are multiple channels, each channel will have their own sample
+    /// 
+    /// ex: 1 channel: \[s1, s2, s3]
+    ///
+    /// 2 channels: \[s-left1, s-right1, s-left-2, s-right-2, s-left-3, s-right-3]
     pub samples: Vec<T>,
+    /// The metadata of the Samples, dictates how they are consumed and modified.
+    /// There is no guarenty that the metadata reflects the actual intended metadata.
     pub metadata: SamplesMetadata,
 }
 
@@ -45,14 +53,15 @@ impl Samples<IntermediateSampleType> {
     }
 }
 
-/// This is used to be able to store Samples Struct of multiple generic type in Box
+/// This is used to be able to store `Samples` Struct of multiple generic type in `Box`
 pub trait SamplesTrait {
-    /// Transforms the samples into IntermediateSampleType, does not clone
+    /// Transforms the samples into `IntermediateSampleType`, does not clone
     fn into_generic_representation_samples(self) -> Samples<IntermediateSampleType>;
 
-    /// Makes a clone of the samples in the IntermediateSampleType
+    /// Makes a clone of the samples in the `IntermediateSampleType`
     fn generic_representation_samples(&self) -> Samples<IntermediateSampleType>;
 
+    /// Gets the metadata of the samples
     fn metadata(&self) -> Box<dyn AudioMetadataTrait>;
 }
 
@@ -81,13 +90,14 @@ where IntermediateSampleType: cpal::FromSample<T> {
     }
 }
 
-/// Metadata about audio samples
 #[derive(Debug, Clone)]
+/// Metadata about audio samples, normally used with the `Samples` struct
 pub struct SamplesMetadata {
     /// Numbers of channels: mono = 1, Stereo = 2, etc...
     pub channels: u16,
     /// The number of samples per a mount of time
     pub sample_rate: u32,
+    /// The type of the samples
     pub sample_type: SampleType,
 }
 

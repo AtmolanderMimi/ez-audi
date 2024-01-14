@@ -180,13 +180,14 @@ pub struct WavAudio<T: ReadSeek> {
 }
 
 impl<T: ReadSeek> WavAudio<T> {
-    /// Creates a new WavAudio and checks if the file is a valid WAVE file
+    /// Creates a new WavAudio and checks if the file is a valid WAVE file,
     pub fn build_from_reader(data: T) -> Error<WavAudio<T>> {
-        //FIXME: change utils to file
-        //if !utils::file_is_wav(path)? {
-        //    return Err(PlayError::WrongFileType);
-        //}
         let mut data = BufReader::new(data);
+
+        if !utils::reader_is_wav(&mut data)? {
+            return Err(PlayError::WrongFileType);
+        }
+        data.rewind()?;
 
         let metadata = WavAudioMetadata::build_from_reader(&mut data)?;
         data.rewind()?;

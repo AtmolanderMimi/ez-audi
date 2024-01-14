@@ -1,3 +1,5 @@
+//! Utils to make your own implementations of `ModifierTrait`
+
 use crate::samples::{Samples, Sample, IntermediateSampleType};
 
 // TODO: God have mercy for I have sinned, ono I have to debug it didn't work on the first try :((((

@@ -21,7 +21,10 @@ pub enum PlayError {
     /// The device does not support specific requirements to play the samples
     DeviceDoesNotSupportAudioSettings(Vec<AudioSettings>, Option<Box<dyn error::Error + 'static>>),
     /// The device does not exist
-    DeviceDoesNotExist{ name: String },
+    DeviceDoesNotExist{ 
+        /// Name of the device, is "default" if failed to get the default
+        name: String 
+    },
     /// Error while trying to comunicate with a stream
     StreamIoError(String, Option<Box<dyn error::Error + 'static>>),
     /// A `Mutex` got poisoned and is not accessible anymore

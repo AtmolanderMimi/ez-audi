@@ -14,16 +14,27 @@ impl<T: cpal::SizedSample + cpal::FromSample<IntermediateSampleType> + std::mark
 where IntermediateSampleType: cpal::FromSample<IntermediateSampleType> {}
 
 #[derive(Debug, Clone, PartialEq)]
+/// The underlying data type of the samples
 pub enum SampleType {
+    /// Samples using the `u8` type
     U8,
+    /// Samples using the `u16` type
     U16,
+    /// Samples using the `u32` type
     U32,
+    /// Samples using the `u64` type
     U64,
+    /// Samples using the `i8` type
     I8,
+    /// Samples using the `i16` type
     I16,
+    /// Samples using the `i32` type
     I32,
+    /// Samples using the `i64` type
     I64,
+    /// Samples using the `f32` type
     F32,
+    /// Samples using the `f64` type
     F64,
 }
 
