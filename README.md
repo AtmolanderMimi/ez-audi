@@ -14,7 +14,7 @@
 * Linux
 * LPcm WAVE files
 * WASM (See `Usage in WASM environment`)
-  *(Windows is has not been tested yet)*
+  *(Windows has not been tested yet)*
 
 ## Get started
 
